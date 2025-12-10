@@ -269,7 +269,7 @@
             'height': 15,
             'shape': 'diamond',
             'label': '',
-            'background-color': 'transparent',
+            'background-opacity': 0,
             'border-width': 3,
             'transition-property': 'border-color',
             'transition-duration': '0.3s'
@@ -598,7 +598,7 @@
         const png = cy.png({
           output: 'blob',
           scale: scale,
-          bg: '#0d1117',
+          bg: 'transparent',
           full: true
         });
         
@@ -611,10 +611,6 @@
           canvas.width = img.width + paddingX * 2;
           canvas.height = img.height + paddingY * 2;
           const ctx = canvas.getContext('2d');
-          
-          // Fill background
-          ctx.fillStyle = '#0d1117';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
           
           // Draw cytoscape graph centered with padding
           ctx.drawImage(img, paddingX, paddingY);
