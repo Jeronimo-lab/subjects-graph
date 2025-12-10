@@ -35,34 +35,48 @@
     STATUS.APPROVED
   ];
 
+  // Current variant identifier
+  const VARIANT = 'frba-k08';
+  const STORAGE_KEY = `graphStatus-${VARIANT}`;
+
   // State management
   let cy; // Cytoscape instance
   let currentSubjects = [];
   let currentLinks = [];
 
-  // Save current data to localStorage
+  // Save subject statuses to localStorage (keyed by variant)
   function saveData() {
-    const data = {
-      subjects: currentSubjects.map(s => {
-        const node = cy.$(`#${s.id}`);
-        return { ...s, status: node ? node.data('status') : s.status || STATUS.INACTIVE };
-      }),
-      links: currentLinks
-    };
-    localStorage.setItem('graphData', JSON.stringify(data));
+    const statuses = {};
+    currentSubjects.forEach(s => {
+      const node = cy.$(`#${s.id}`);
+      const status = node ? node.data('status') : s.status || STATUS.INACTIVE;
+      if (status !== STATUS.INACTIVE) {
+        statuses[s.id] = status; // Only save non-inactive statuses
+      }
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
   }
 
-  // Load saved data from localStorage or use default
-  function loadData() {
-    const saved = localStorage.getItem('graphData');
-    return saved ? JSON.parse(saved) : defaultData;
+  // Load subject statuses from localStorage
+  function loadStatuses() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
   }
 
   // Initialize the application
   function init() {
-    const data = loadData();
-    currentSubjects = data.subjects;
-    currentLinks = data.links;
+    // Always load graph structure from default data
+    currentSubjects = defaultData.subjects.map(s => ({ ...s }));
+    currentLinks = defaultData.links;
+    
+    // Apply saved statuses
+    const savedStatuses = loadStatuses();
+    currentSubjects.forEach(s => {
+      if (savedStatuses[s.id]) {
+        s.status = savedStatuses[s.id];
+      }
+    });
+    
     initGraph();
     setupEventListeners();
   }
@@ -626,7 +640,7 @@
   function setupEventListeners() {
     // Reset button
     document.getElementById('reset-btn').addEventListener('click', () => {
-      localStorage.removeItem('graphData');
+      localStorage.removeItem(STORAGE_KEY);
       location.reload();
     });
 
@@ -635,18 +649,19 @@
       cy.fit(50);
     });
 
-    // Export button
+    // Export button - exports statuses for current variant
     document.getElementById('export-btn').addEventListener('click', () => {
-      const data = localStorage.getItem('graphData');
-      if (!data) {
-        alert('No hay datos para exportar.');
+      const statuses = loadStatuses();
+      if (Object.keys(statuses).length === 0) {
+        alert('No hay progreso para exportar.');
         return;
       }
-      const blob = new Blob([data], { type: 'application/json' });
+      const exportData = { variant: VARIANT, statuses };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'frba-subjects-progress.json';
+      a.download = `progress-${VARIANT}.json`;
       a.click();
       URL.revokeObjectURL(url);
     });
@@ -663,10 +678,10 @@
         reader.onload = (e) => {
           try {
             const data = JSON.parse(e.target.result);
-            if (!data.subjects || !data.links) {
+            if (!data.statuses || typeof data.statuses !== 'object') {
               throw new Error('Formato de datos inválido');
             }
-            localStorage.setItem('graphData', JSON.stringify(data));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.statuses));
             location.reload();
           } catch (err) {
             alert('Error al importar: ' + err.message);
