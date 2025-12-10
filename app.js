@@ -35,14 +35,20 @@
     STATUS.APPROVED
   ];
 
-  // Current variant identifier
-  const VARIANT = 'frba-k08';
-  const STORAGE_KEY = `graphStatus-${VARIANT}`;
+  // Variant storage key
+  const VARIANT_STORAGE_KEY = 'selectedVariant';
 
   // State management
   let cy; // Cytoscape instance
+  let appData = null; // Loaded from data.json
+  let currentVariant = null;
   let currentSubjects = [];
   let currentLinks = [];
+
+  // Get storage key for current variant
+  function getStorageKey() {
+    return `graphStatus-${currentVariant}`;
+  }
 
   // Save subject statuses to localStorage (keyed by variant)
   function saveData() {
@@ -54,20 +60,50 @@
         statuses[s.id] = status; // Only save non-inactive statuses
       }
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
+    localStorage.setItem(getStorageKey(), JSON.stringify(statuses));
   }
 
   // Load subject statuses from localStorage
   function loadStatuses() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(getStorageKey());
     return saved ? JSON.parse(saved) : {};
   }
 
   // Initialize the application
-  function init() {
-    // Always load graph structure from default data
-    currentSubjects = defaultData.subjects.map(s => ({ ...s }));
-    currentLinks = defaultData.links;
+  async function init() {
+    // Fetch data.json
+    try {
+      const response = await fetch('data.json');
+      appData = await response.json();
+    } catch (err) {
+      console.error('Error loading data.json:', err);
+      alert('Error al cargar datos');
+      return;
+    }
+
+    // Populate variant dropdown
+    const variantSelect = document.getElementById('variant-select');
+    variantSelect.innerHTML = '';
+    Object.entries(appData.variants).forEach(([id, variant]) => {
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = variant.name;
+      variantSelect.appendChild(option);
+    });
+
+    // Load selected variant from localStorage or use default
+    const savedVariant = localStorage.getItem(VARIANT_STORAGE_KEY);
+    currentVariant = (savedVariant && appData.variants[savedVariant]) 
+      ? savedVariant 
+      : appData.defaultVariant;
+    
+    // Set dropdown to current variant
+    variantSelect.value = currentVariant;
+    
+    // Load graph structure from variant data
+    const variantData = appData.variants[currentVariant];
+    currentSubjects = variantData.subjects.map(s => ({ ...s }));
+    currentLinks = variantData.links;
     
     // Apply saved statuses
     const savedStatuses = loadStatuses();
@@ -638,9 +674,18 @@
 
   // Setup event listeners
   function setupEventListeners() {
+    // Variant selector
+    document.getElementById('variant-select').addEventListener('change', (e) => {
+      const newVariant = e.target.value;
+      if (appData.variants[newVariant]) {
+        localStorage.setItem(VARIANT_STORAGE_KEY, newVariant);
+        location.reload();
+      }
+    });
+
     // Reset button
     document.getElementById('reset-btn').addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(getStorageKey());
       location.reload();
     });
 
@@ -656,12 +701,12 @@
         alert('No hay progreso para exportar.');
         return;
       }
-      const exportData = { variant: VARIANT, statuses };
+      const exportData = { variant: currentVariant, statuses };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `progress-${VARIANT}.json`;
+      a.download = `progress-${currentVariant}.json`;
       a.click();
       URL.revokeObjectURL(url);
     });
@@ -681,7 +726,7 @@
             if (!data.statuses || typeof data.statuses !== 'object') {
               throw new Error('Formato de datos inválido');
             }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.statuses));
+            localStorage.setItem(getStorageKey(), JSON.stringify(data.statuses));
             location.reload();
           } catch (err) {
             alert('Error al importar: ' + err.message);

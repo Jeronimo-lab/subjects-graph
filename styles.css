@@ -72,9 +72,26 @@ header h1 {
   font-weight: 700;
 }
 
-.subtitle {
+.variant-select {
+  background: var(--bg-tertiary);
   color: var(--text-secondary);
   font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.variant-select:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-blue);
+}
+
+.variant-select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 /* Main Content Layout */
@@ -455,8 +472,8 @@ header h1 {
     font-size: 2rem;
   }
   
-  .subtitle {
-    font-size: 1rem;
+  .variant-select {
+    font-size: 0.9rem;
   }
   
   #cy {
