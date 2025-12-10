@@ -387,7 +387,16 @@ header h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.btn-reset svg,
+.btn-fit svg,
+.btn-export svg,
+.btn-import svg,
+.btn-screenshot svg {
+  width: 18px;
+  height: 18px;
 }
 
 .btn-reset:hover,

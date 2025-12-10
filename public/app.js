@@ -883,9 +883,14 @@
   }
 
   // Start the application when DOM is ready
+  async function bootstrap() {
+    await init();
+    lucide.createIcons();
+  }
+  
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', bootstrap);
   } else {
-    init();
+    bootstrap();
   }
 })();

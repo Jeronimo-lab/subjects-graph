@@ -6,6 +6,7 @@
     <title>Grafo de Materias - UTN FRBA</title>
     <link rel="stylesheet" href="styles.css">
     <script src="cytoscape.min.js"></script>
+    <script src="lucide.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -40,8 +41,8 @@
                     
                     <!-- Screenshot Button -->
                     <div class="screenshot-container">
-                        <button id="fit-btn" class="btn-fit" title="Ajustar Vista">🔄</button>
-                        <button id="screenshot-btn" class="btn-screenshot" title="Capturar Pantalla">📸</button>
+                        <button id="fit-btn" class="btn-fit" title="Ajustar Vista"><i data-lucide="maximize"></i></button>
+                        <button id="screenshot-btn" class="btn-screenshot" title="Capturar Pantalla"><i data-lucide="camera"></i></button>
                     </div>
                 </div>            <!-- Legend/References Panel -->
             <aside class="legend-panel">
@@ -84,9 +85,9 @@
                     <p class="control-description">• Scroll: zoom</p>
                     <p class="control-description">• Arrastrar: mover vista</p>
                     <div class="button-row">
-                        <button id="import-btn" class="btn-import" title="Importar Datos">📥 Importar</button>
-                        <button id="export-btn" class="btn-export" title="Exportar Datos">📤 Exportar</button>
-                        <button id="reset-btn" class="btn-reset" title="Reiniciar Progreso">🗑️</button>
+                        <button id="import-btn" class="btn-import" title="Importar Datos"><i data-lucide="download"></i> Importar</button>
+                        <button id="export-btn" class="btn-export" title="Exportar Datos"><i data-lucide="upload"></i> Exportar</button>
+                        <button id="reset-btn" class="btn-reset" title="Reiniciar Progreso"><i data-lucide="trash-2"></i></button>
                     </div>
                 </div>
             </aside>
