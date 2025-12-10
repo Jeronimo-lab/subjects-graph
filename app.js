@@ -778,6 +778,9 @@
           // Draw progress gauge in bottom-right corner (in padding area)
           drawProgressGauge(ctx, scale);
           
+          // Draw watermark
+          drawWatermark(ctx, scale);
+          
           // Download the composited image
           canvas.toBlob(blob => {
             const url = URL.createObjectURL(blob);
@@ -854,6 +857,28 @@
       ctx.fillStyle = '#2255d4';
       ctx.font = `600 ${0.75 * 16 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.fillText(`${pendingPercent}%`, centerX, centerY + 12 * scale);
+    }
+
+    // Draw watermark on canvas
+    function drawWatermark(ctx, scale) {
+      const text = 'raniagus.github.io/frba-subjects-graph';
+      const fontSize = 12 * scale;
+      const x = ctx.canvas.width / 2;
+      const y = 20 * scale;
+      
+      ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      
+      // Draw black stroke
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 3 * scale;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(text, x, y);
+      
+      // Draw white fill
+      ctx.fillStyle = 'white';
+      ctx.fillText(text, x, y);
     }
   }
 

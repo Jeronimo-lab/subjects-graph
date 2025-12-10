@@ -120,6 +120,23 @@ header h1 {
   cursor: default;
 }
 
+/* Watermark */
+.watermark {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 
+    -1px -1px 0 black,
+    1px -1px 0 black,
+    -1px 1px 0 black,
+    1px 1px 0 black;
+  z-index: 5;
+}
+
 /* Progress Gauge */
 .progress-container {
   position: absolute;
