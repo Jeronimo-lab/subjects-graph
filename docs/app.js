@@ -93,18 +93,18 @@
 
     // Load selected variant from localStorage or use default
     const savedVariant = localStorage.getItem(VARIANT_STORAGE_KEY);
-    currentVariant = (savedVariant && appData.variants[savedVariant]) 
-      ? savedVariant 
+    currentVariant = (savedVariant && appData.variants[savedVariant])
+      ? savedVariant
       : appData.defaultVariant;
-    
+
     // Set dropdown to current variant
     variantSelect.value = currentVariant;
-    
+
     // Load graph structure from variant data
     const variantData = appData.variants[currentVariant];
     currentSubjects = variantData.subjects.map(s => ({ ...s }));
     currentLinks = variantData.links;
-    
+
     // Apply saved statuses
     const savedStatuses = loadStatuses();
     currentSubjects.forEach(s => {
@@ -112,7 +112,7 @@
         s.status = savedStatuses[s.id];
       }
     });
-    
+
     initGraph();
     setupEventListeners();
   }
@@ -143,7 +143,7 @@
       // Invisible if: 1 source + 1 destination, OR connects to/from another link
       const connectsToLink = link.destinations?.some(id => isLinkId(id));
       const connectsFromLink = link.sources?.some(id => isLinkId(id));
-      const isInvisible = (link.sources?.length === 1 && link.destinations?.length === 1) || 
+      const isInvisible = (link.sources?.length === 1 && link.destinations?.length === 1) ||
                           connectsToLink || connectsFromLink;
       return {
         data: {
@@ -171,9 +171,9 @@
         // Check if this connector should be invisible
         const connectsToLink = link.destinations.some(id => isLinkId(id));
         const connectsFromLink = link.sources.some(id => isLinkId(id));
-        const isInvisible = (link.sources.length === 1 && link.destinations.length === 1) || 
+        const isInvisible = (link.sources.length === 1 && link.destinations.length === 1) ||
                             connectsToLink || connectsFromLink;
-        
+
         if (isInvisible) {
           // For invisible connectors: draw source -> connector and connector -> destination
           // But the connector node itself won't be visible, creating the effect of - () ->
@@ -189,7 +189,7 @@
               }
             });
           });
-          
+
           link.destinations.forEach(destId => {
             const destIsLink = isLinkId(destId);
             edges.push({
@@ -201,7 +201,7 @@
               }
             });
           });
-          
+
           // Mark connections as processed
           link.sources.forEach(sourceId => {
             link.destinations.forEach(destId => {
@@ -219,7 +219,7 @@
                 target: link.id
               }
             });
-            
+
             // Mark these connections as processed for each destination
             link.destinations.forEach(destId => {
               processedConnections.add(`${sourceId}-${destId}`);
@@ -244,10 +244,10 @@
     const getUltimateDestinations = (linkId, visited = new Set()) => {
       if (visited.has(linkId)) return [];
       visited.add(linkId);
-      
+
       const linkData = currentLinks.find(l => l.id === linkId);
       if (!linkData || !linkData.destinations) return [];
-      
+
       const subjectDests = [];
       linkData.destinations.forEach(destId => {
         if (isLinkId(destId)) {
@@ -263,10 +263,10 @@
     const getUltimateSources = (linkId, visited = new Set()) => {
       if (visited.has(linkId)) return [];
       visited.add(linkId);
-      
+
       const linkData = currentLinks.find(l => l.id === linkId);
       if (!linkData || !linkData.sources) return [];
-      
+
       const subjectSources = [];
       linkData.sources.forEach(sourceId => {
         if (isLinkId(sourceId)) {
@@ -294,7 +294,7 @@
       if (subject.prerequisites && subject.prerequisites.length > 0) {
         subject.prerequisites.forEach(prereqId => {
           const connectionKey = `${prereqId}-${subject.id}`;
-          
+
           // Only add direct edge if not already connected through a connector
           if (!processedConnections.has(connectionKey)) {
             edges.push({
@@ -312,7 +312,7 @@
     // Initialize Cytoscape
     cy = cytoscape({
       container: document.getElementById('cy'),
-      
+
       elements: {
         nodes: nodes,
         edges: edges
@@ -452,7 +452,7 @@
       const currentIndex = STATUS_ORDER.indexOf(currentStatus);
       const nextIndex = (currentIndex + 1) % STATUS_ORDER.length;
       const nextStatus = STATUS_ORDER[nextIndex];
-      
+
       node.data('status', nextStatus);
       updateDependentStyles();
       saveData();
@@ -461,9 +461,9 @@
     // Update borders and edge colors based on dependency statuses
     function updateDependentStyles() {
       // Helper: check if status is at least FINAL_EXAM_PENDING
-      const isFinalPendingOrAbove = (status) => 
+      const isFinalPendingOrAbove = (status) =>
         status === STATUS.FINAL_EXAM_PENDING || status === STATUS.APPROVED;
-      
+
       // Helper: check if status is APPROVED
       const isApproved = (status) => status === STATUS.APPROVED;
 
@@ -477,12 +477,12 @@
       const allDependenciesApproved = (subjectId, visited = new Set()) => {
         if (visited.has(subjectId)) return true; // Avoid cycles
         visited.add(subjectId);
-        
+
         const subjectData = currentSubjects.find(s => s.id === subjectId);
         if (!subjectData || !subjectData.prerequisites || subjectData.prerequisites.length === 0) {
           return true; // No prerequisites means this branch is OK
         }
-        
+
         return subjectData.prerequisites.every(prereqId => {
           // The prerequisite itself must be APPROVED
           if (!isApproved(getNodeStatus(prereqId))) return false;
@@ -498,7 +498,7 @@
         if (!subjectData || !subjectData.prerequisites || subjectData.prerequisites.length === 0) {
           return true; // No prerequisites means OK
         }
-        
+
         return subjectData.prerequisites.every(prereqId => {
           // The direct prerequisite must be at least FINAL_EXAM_PENDING
           if (!isFinalPendingOrAbove(getNodeStatus(prereqId))) return false;
@@ -534,10 +534,10 @@
       const getUltimateSubjectSources = (linkId, visited = new Set()) => {
         if (visited.has(linkId)) return []; // Avoid cycles
         visited.add(linkId);
-        
+
         const linkData = currentLinks.find(l => l.id === linkId);
         if (!linkData || !linkData.sources) return [];
-        
+
         const subjectSources = [];
         linkData.sources.forEach(sourceId => {
           const isLink = currentLinks.some(l => l.id === sourceId);
@@ -559,11 +559,11 @@
         if (ultimateSources.length === 0) return;
 
         // Check if all sources and their dependencies are APPROVED
-        const allApproved = ultimateSources.every(sourceId => 
+        const allApproved = ultimateSources.every(sourceId =>
           isApproved(getNodeStatus(sourceId)) && allDependenciesApproved(sourceId)
         );
         // Check if all sources are FINAL_EXAM_PENDING+ and their deps are APPROVED
-        const finalPendingReady = ultimateSources.every(sourceId => 
+        const finalPendingReady = ultimateSources.every(sourceId =>
           isFinalPendingOrAbove(getNodeStatus(sourceId)) && allDependenciesApproved(sourceId)
         );
 
@@ -580,17 +580,17 @@
       cy.edges().forEach(edge => {
         const sourceNode = edge.source();
         const sourceType = sourceNode.data('nodeType');
-        
+
         let edgeColor = BORDER_COLORS.DEFAULT;
 
         if (sourceType === 'connector') {
           // For connectors: get ultimate subject sources (traverse link chains)
           const ultimateSources = getUltimateSubjectSources(sourceNode.id());
-          
-          const allApproved = ultimateSources.every(sourceId => 
+
+          const allApproved = ultimateSources.every(sourceId =>
             isApproved(getNodeStatus(sourceId)) && allDependenciesApproved(sourceId)
           );
-          const finalPendingReady = ultimateSources.every(sourceId => 
+          const finalPendingReady = ultimateSources.every(sourceId =>
             isFinalPendingOrAbove(getNodeStatus(sourceId)) && allDependenciesApproved(sourceId)
           );
 
@@ -603,10 +603,10 @@
           // For subjects: check the source node's status AND all its dependencies must be APPROVED
           const sourceId = sourceNode.id();
           const sourceStatus = sourceNode.data('status');
-          
+
           const sourceApproved = isApproved(sourceStatus) && allDependenciesApproved(sourceId);
           const sourceFinalPendingReady = isFinalPendingOrAbove(sourceStatus) && allDependenciesApproved(sourceId);
-          
+
           if (sourceApproved) {
             edgeColor = BORDER_COLORS.APPROVED_READY;
           } else if (sourceFinalPendingReady) {
@@ -661,12 +661,12 @@
 
     // Cursor styles and tooltip
     const container = document.getElementById('cy');
-    
+
     // Create tooltip element
     const tooltip = document.createElement('div');
     tooltip.className = 'cy-tooltip';
     container.appendChild(tooltip);
-    
+
     cy.on('mouseover', 'node[nodeType="subject"]', function(e) {
       container.style.cursor = 'pointer';
       tooltip.textContent = e.target.data('name');
@@ -761,7 +761,7 @@
           bg: 'transparent',
           full: true
         });
-        
+
         // Load the cytoscape image and composite with progress gauge
         const img = new Image();
         img.onload = () => {
@@ -771,21 +771,21 @@
           canvas.width = img.width + paddingX * 2;
           canvas.height = img.height + paddingY * 2;
           const ctx = canvas.getContext('2d');
-          
+
           // Draw cytoscape graph centered with padding
           ctx.drawImage(img, paddingX, paddingY);
-          
+
           // Draw progress gauge in bottom-right corner (in padding area)
           drawProgressGauge(ctx, scale);
-          
+
           // Draw watermark
           drawWatermark(ctx, scale);
-          
+
           // Download the composited image
           canvas.toBlob(blob => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.download = 'frba-subjects-graph.png';
+            link.download = 'subjects-graph.png';
             link.href = url;
             link.click();
             URL.revokeObjectURL(url);
@@ -797,7 +797,7 @@
         alert('Error al capturar pantalla: ' + err.message);
       }
     });
-    
+
     // Draw progress gauge on canvas
     function drawProgressGauge(ctx, scale) {
       const size = 120 * scale;
@@ -808,24 +808,24 @@
       const centerY = y + size / 2;
       const radius = 45 * scale;
       const strokeWidth = 8 * scale;
-      
+
       // Get current progress values
       const approvedPercent = parseInt(document.getElementById('progress-percentage').textContent);
       const pendingPercent = parseInt(document.getElementById('progress-pending-text').textContent);
-      
+
       // Draw background circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
       ctx.fillStyle = '#161b22';
       ctx.fill();
-      
+
       // Draw track circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.strokeStyle = '#21262d';
       ctx.lineWidth = strokeWidth;
       ctx.stroke();
-      
+
       // Draw pending arc (behind approved)
       if (pendingPercent > 0) {
         ctx.beginPath();
@@ -835,7 +835,7 @@
         ctx.lineCap = 'round';
         ctx.stroke();
       }
-      
+
       // Draw approved arc (on top)
       if (approvedPercent > 0) {
         ctx.beginPath();
@@ -845,14 +845,14 @@
         ctx.lineCap = 'round';
         ctx.stroke();
       }
-      
+
       // Draw approved percentage text
       ctx.fillStyle = '#3b82f6';
       ctx.font = `700 ${1.5 * 16 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(`${approvedPercent}%`, centerX, centerY - 6 * scale);
-      
+
       // Draw pending percentage text
       ctx.fillStyle = '#2255d4';
       ctx.font = `600 ${0.75 * 16 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
@@ -861,21 +861,21 @@
 
     // Draw watermark on canvas
     function drawWatermark(ctx, scale) {
-      const text = 'raniagus.github.io/frba-subjects-graph';
+      const text = 'raniagus.github.io/subjects-graph';
       const fontSize = 12 * scale;
       const x = ctx.canvas.width / 2;
       const y = 20 * scale;
-      
+
       ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      
+
       // Draw black stroke
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 3 * scale;
       ctx.lineJoin = 'round';
       ctx.strokeText(text, x, y);
-      
+
       // Draw white fill
       ctx.fillStyle = 'white';
       ctx.fillText(text, x, y);
@@ -887,7 +887,7 @@
     await init();
     lucide.createIcons();
   }
-  
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bootstrap);
   } else {

@@ -60,8 +60,8 @@ Click any subject node to cycle through states:
 ### Installation
 
 ```bash
-git clone https://github.com/RaniAgus/frba-subjects-graph.git
-cd frba-subjects-graph
+git clone https://github.com/RaniAgus/subjects-graph.git
+cd subjects-graph
 ```
 
 ### Running Locally
@@ -86,7 +86,7 @@ The `public/` folder is configured for GitHub Pages deployment.
 ## File Structure
 
 ```
-frba-subjects-graph/
+subjects-graph/
 ├── public/
 │   ├── index.html        # Main HTML
 │   ├── app.js            # Application logic
