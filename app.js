@@ -598,7 +598,7 @@
         const png = cy.png({
           output: 'blob',
           scale: scale,
-          bg: '#0a1628',
+          bg: '#0d1117',
           full: true
         });
         
@@ -651,13 +651,13 @@
       // Draw background circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
-      ctx.fillStyle = '#1a2942';
+      ctx.fillStyle = '#161b22';
       ctx.fill();
       
       // Draw track circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = '#2a3952';
+      ctx.strokeStyle = '#21262d';
       ctx.lineWidth = strokeWidth;
       ctx.stroke();
       
