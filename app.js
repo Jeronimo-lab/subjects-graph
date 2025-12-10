@@ -605,15 +605,21 @@
         // Load the cytoscape image and composite with progress gauge
         const img = new Image();
         img.onload = () => {
+          const paddingX = 150 * scale; // Horizontal padding
+          const paddingY = 50 * scale;  // Vertical padding
           const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
+          canvas.width = img.width + paddingX * 2;
+          canvas.height = img.height + paddingY * 2;
           const ctx = canvas.getContext('2d');
           
-          // Draw cytoscape graph
-          ctx.drawImage(img, 0, 0);
+          // Fill background
+          ctx.fillStyle = '#0d1117';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           
-          // Draw progress gauge in bottom-left corner
+          // Draw cytoscape graph centered with padding
+          ctx.drawImage(img, paddingX, paddingY);
+          
+          // Draw progress gauge in bottom-right corner (in padding area)
           drawProgressGauge(ctx, scale);
           
           // Download the composited image
