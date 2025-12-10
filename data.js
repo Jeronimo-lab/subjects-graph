@@ -315,6 +315,30 @@ const links = [
     sources: ['link21'],
     destinations: ['TdC'],
     position: { x: 800, y: 0 }
+  },
+  {
+    id: 'link23',
+    sources: ['SO'],
+    destinations: ['link24'],
+    position: { x: 100, y: 700 }
+  },
+  {
+    id: 'link24',
+    sources: ['link23'],
+    destinations: ['link25'],
+    position: { x: 0, y: 700 }
+  },
+  {
+    id: 'link25',
+    sources: ['link24'],
+    destinations: ['link26'],
+    position: { x: 0, y: 0 }
+  },
+  {
+    id: 'link26',
+    sources: ['link25'],
+    destinations: ['AdR'],
+    position: { x: 200, y: 0 }
   }
 ];
 
