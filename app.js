@@ -594,24 +594,105 @@
     // Screenshot button
     document.getElementById('screenshot-btn').addEventListener('click', () => {
       try {
+        const scale = 4;
         const png = cy.png({
           output: 'blob',
-          scale: 4, // High resolution (4x)
-          bg: '#1a1a2e', // Match the graph background color
-          full: true // Capture all elements, not just viewport
+          scale: scale,
+          bg: '#0a1628',
+          full: true
         });
         
-        const url = URL.createObjectURL(png);
-        const link = document.createElement('a');
-        link.download = 'frba-subjects-graph.png';
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
+        // Load the cytoscape image and composite with progress gauge
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          
+          // Draw cytoscape graph
+          ctx.drawImage(img, 0, 0);
+          
+          // Draw progress gauge in bottom-left corner
+          drawProgressGauge(ctx, scale);
+          
+          // Download the composited image
+          canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = 'frba-subjects-graph.png';
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+          }, 'image/png');
+        };
+        img.src = URL.createObjectURL(png);
       } catch (err) {
         console.error('Screenshot error:', err);
         alert('Error al capturar pantalla: ' + err.message);
       }
     });
+    
+    // Draw progress gauge on canvas
+    function drawProgressGauge(ctx, scale) {
+      const size = 120 * scale;
+      const padding = 10 * scale;
+      const x = ctx.canvas.width - size - 30 * scale;
+      const y = ctx.canvas.height - size - 30 * scale;
+      const centerX = x + size / 2;
+      const centerY = y + size / 2;
+      const radius = 45 * scale;
+      const strokeWidth = 8 * scale;
+      
+      // Get current progress values
+      const approvedPercent = parseInt(document.getElementById('progress-percentage').textContent);
+      const pendingPercent = parseInt(document.getElementById('progress-pending-text').textContent);
+      
+      // Draw background circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#1a2942';
+      ctx.fill();
+      
+      // Draw track circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = '#2a3952';
+      ctx.lineWidth = strokeWidth;
+      ctx.stroke();
+      
+      // Draw pending arc (behind approved)
+      if (pendingPercent > 0) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pendingPercent / 100));
+        ctx.strokeStyle = '#2255d4';
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      
+      // Draw approved arc (on top)
+      if (approvedPercent > 0) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * approvedPercent / 100));
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      
+      // Draw approved percentage text
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = `700 ${1.5 * 16 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${approvedPercent}%`, centerX, centerY - 6 * scale);
+      
+      // Draw pending percentage text
+      ctx.fillStyle = '#2255d4';
+      ctx.font = `600 ${0.75 * 16 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.fillText(`${pendingPercent}%`, centerX, centerY + 12 * scale);
+    }
   }
 
   // Start the application when DOM is ready
