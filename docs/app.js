@@ -585,14 +585,6 @@
         return minSatisfiedIndex >= 0 ? STATUS_ORDER[minSatisfiedIndex] : null;
       };
 
-      // Update connector node borders based on their sources
-      cy.nodes('[nodeType="connector"]').forEach(node => {
-        const ultimateSources = getUltimateSubjectSources(node.id());
-        if (ultimateSources.length === 0) return;
-
-        const satisfiedStatus = getSourcesSatisfiedStatus(ultimateSources);
-        node.data('borderState', satisfiedStatus || defaultStatusId);
-      });
 
       // Helper: get ultimate target subject (follows connector chains)
       const getUltimateTarget = (nodeId) => {
@@ -673,6 +665,46 @@
 
         return STATUS_ORDER[minStatusIndex] || defaultStatusId;
       };
+
+      // Helper: get ultimate destinations for a connector
+      const getUltimateDests = (linkId, visited = new Set()) => {
+        if (visited.has(linkId)) return [];
+        visited.add(linkId);
+        const ld = currentLinks.find(l => l.id === linkId);
+        if (!ld || !ld.destinations) return [];
+        const dests = [];
+        for (const destId of ld.destinations) {
+          const isLink = currentLinks.some(l => l.id === destId);
+          dests.push(...(isLink ? getUltimateDests(destId, visited) : [destId]));
+        }
+        return dests;
+      };
+
+      // Update connector node borders - for each destination, evaluate against each source, use lowest
+      cy.nodes('[nodeType="connector"]').forEach(node => {
+        const ultimateSources = getUltimateSubjectSources(node.id());
+        if (ultimateSources.length === 0) return;
+
+        const ultimateDests = getUltimateDests(node.id());
+        if (ultimateDests.length === 0) return;
+
+        // Evaluate each source against each destination, collect all results
+        let minIndex = STATUS_ORDER.length - 1;
+        let anyFailed = false;
+
+        for (const destId of ultimateDests) {
+          for (const srcId of ultimateSources) {
+            const status = getEffectiveSourceStatus(srcId, destId);
+            if (status === defaultStatusId) {
+              anyFailed = true;
+            } else {
+              minIndex = Math.min(minIndex, getStatusIndex(status));
+            }
+          }
+        }
+
+        node.data('borderState', anyFailed ? defaultStatusId : (STATUS_ORDER[minIndex] || defaultStatusId));
+      });
 
       // Update edge colors based on source's effective status (including its subtree)
       cy.edges().forEach(edge => {
