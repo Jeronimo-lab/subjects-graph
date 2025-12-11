@@ -115,6 +115,28 @@
 
     initGraph();
     setupEventListeners();
+    registerServiceWorkerIfInstalled();
+  }
+
+  // Detect whether the app is running as an installed PWA
+  function isInstalled() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIosStandalone = window.navigator.standalone === true;
+    const isAndroidWebAPK = /android/.test(navigator.userAgent) && document.referrer && document.referrer.startsWith('android-app://');
+    const persisted = localStorage.getItem('pwaInstalled') === 'true';
+    return isStandalone || isIosStandalone || isAndroidWebAPK || persisted;
+  }
+
+  // Register service worker only when in installed mode (Option A)
+  async function registerServiceWorkerIfInstalled() {
+    if (!('serviceWorker' in navigator)) return;
+    if (!isInstalled()) return; // Only register for installed PWA
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      console.log('Service Worker registered (installed PWA):', reg);
+    } catch (err) {
+      console.error('Service Worker registration failed:', err);
+    }
   }
 
   // Initialize Cytoscape graph
@@ -689,6 +711,13 @@
     window.addEventListener('appinstalled', () => {
       const installBtn = document.getElementById('install-button');
       if (installBtn) installBtn.style.display = 'none';
+      try {
+        localStorage.setItem('pwaInstalled', 'true');
+      } catch (err) {
+        // ignore storage errors
+      }
+      // Register SW on installed app
+      registerServiceWorkerIfInstalled();
       console.log('App installed (appinstalled event)');
     });
   }

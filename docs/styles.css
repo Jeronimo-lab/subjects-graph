@@ -86,7 +86,7 @@ header h1 {
   transition: all 0.2s ease;
   display: inline-block;
   max-width: 100%;
-  width: min(90%, 35rem);
+  width: min(90%, 32rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
