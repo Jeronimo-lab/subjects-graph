@@ -263,6 +263,13 @@ header h1 {
   margin-bottom: 30px;
 }
 
+#status-legend,
+#border-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .legend-item {
   display: flex;
   align-items: center;
@@ -321,25 +328,9 @@ header h1 {
   font-size: 0.9rem;
 }
 
-/* Border color classes for legend */
-.border-neutral-gray {
-  border: 3px solid #6b7280;
-  background: transparent;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-}
-
-.border-deep-blue {
-  border: 3px solid #1e40af;
-  background: transparent;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-}
-
-.border-light-blue {
-  border: 3px solid #3b82f6;
+/* Border color class for legend (dynamically styled) */
+.legend-border {
+  border: 3px solid;
   background: transparent;
   width: 40px;
   height: 40px;

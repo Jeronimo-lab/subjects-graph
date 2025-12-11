@@ -42,6 +42,42 @@
     return saved ? JSON.parse(saved) : {};
   }
 
+  // Generate legend from status configuration
+  function generateLegend() {
+    const statusLegend = document.getElementById('status-legend');
+    const borderLegend = document.getElementById('border-legend');
+
+    // Clear existing content
+    statusLegend.innerHTML = '';
+    borderLegend.innerHTML = '';
+
+    // Generate status legend items
+    statusConfig.forEach(status => {
+      if (status.label) {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `
+          <div class="legend-color" style="background: ${status.color}"></div>
+          <span>${status.label}</span>
+        `;
+        statusLegend.appendChild(item);
+      }
+    });
+
+    // Generate border legend items (only for statuses with borderLabel)
+    statusConfig.forEach(status => {
+      if (status.borderLabel) {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `
+          <div class="legend-color legend-border" style="border-color: ${status.borderColor}"></div>
+          <span>${status.borderLabel}</span>
+        `;
+        borderLegend.appendChild(item);
+      }
+    });
+  }
+
   // Initialize the application
   async function init() {
     // Fetch data.json
@@ -83,6 +119,9 @@
     STATUS_ORDER = statusConfig.map(s => s.id);
     STATUS_COLORS = Object.fromEntries(statusConfig.map(s => [s.id, s.color]));
     STATUS_BORDER_COLORS = Object.fromEntries(statusConfig.map(s => [s.id, s.borderColor]));
+
+    // Generate legend from status config
+    generateLegend();
 
     // Apply saved statuses
     const savedStatuses = loadStatuses();

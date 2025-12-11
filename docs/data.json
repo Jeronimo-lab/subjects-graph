@@ -4,10 +4,10 @@
     "frba-k08": {
       "name": "Ingeniería en Sistemas de Información - UTN FRBA - Plan K08",
       "statuses": [
-        { "id": "INACTIVE", "color": "#111827", "borderColor": "#323b48" },
-        { "id": "IN_PROGRESS", "color": "#374151", "borderColor": "#323b48" },
-        { "id": "FINAL_EXAM_PENDING", "color": "#2255d4", "borderColor": "#2050c8" },
-        { "id": "APPROVED", "color": "#3b82f6", "borderColor": "#387dd9" }
+        { "id": "INACTIVE", "color": "#111827", "borderColor": "#323b48", "label": "Inactiva", "borderLabel": "No disponible" },
+        { "id": "IN_PROGRESS", "color": "#374151", "borderColor": "#323b48", "label": "En curso" },
+        { "id": "FINAL_EXAM_PENDING", "color": "#2255d4", "borderColor": "#2050c8", "label": "Final pendiente", "borderLabel": "Disponible para cursar" },
+        { "id": "APPROVED", "color": "#3b82f6", "borderColor": "#387dd9", "label": "Aprobada", "borderLabel": "Disponible para aprobar" }
       ],
       "subjects": [
         {
