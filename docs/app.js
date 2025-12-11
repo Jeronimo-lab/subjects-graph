@@ -684,6 +684,13 @@
       container.style.cursor = 'default';
       tooltip.style.display = 'none';
     });
+
+    // Handle appinstalled event and update UX accordingly
+    window.addEventListener('appinstalled', () => {
+      const installBtn = document.getElementById('install-button');
+      if (installBtn) installBtn.style.display = 'none';
+      console.log('App installed (appinstalled event)');
+    });
   }
 
   // Setup event listeners

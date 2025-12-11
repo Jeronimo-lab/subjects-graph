@@ -66,28 +66,54 @@ cd subjects-graph
 
 ### Running Locally
 
-Serve the `public/` folder with any static file server:
+Serve the `docs/` folder with any static file server:
 
 ```bash
-# Python 3
-python -m http.server 8000 -d public
+# Python 3 - serve the `docs/` folder
+python -m http.server 8000 -d docs
 
-# Node.js
-npx serve public
+# Node.js (serve) - serve the `docs/` folder
+npx serve docs
 
 # VS Code Live Server
-# Open public/index.html and click "Go Live"
+# Open docs/index.html and click "Go Live"
 ```
 
 ### GitHub Pages
 
-The `public/` folder is configured for GitHub Pages deployment.
+The `docs/` folder is configured for GitHub Pages deployment.
+
+## Progressive Web App (PWA) Support ✅
+
+This project implements a basic PWA. It includes:
+
+- `docs/manifest.webmanifest` — Web App Manifest (name, short_name, icons, theme)
+- `docs/sw.js` — Service Worker that precaches the app shell and assets (index, CSS, JS, JSON, libraries)
+- `docs/offline.html` — a fallback offline page when the app shell can't be served
+
+### Offline behavior
+
+The app caches the full app shell and crucial resources (scripts, styles, `data.json`) on install; therefore, after a successful first visit, the app should load and work offline. In particular:
+
+- Navigation (loading `/` or `index.html`) will return the cached `index.html` when the network is unavailable, allowing the SPA to boot and be usable offline.
+- Cached assets are served from the cache; features that depend on remote services (if any) will still fail while offline.
+- The `offline.html` fallback is still present and will display if `index.html` isn't cached for some reason.
+
+How to validate offline behavior:
+
+1. Start a local server from the repo root (see instructions above).
+2. Open https://localhost:8000 (or http) in Chrome/Edge DevTools.
+3. Open DevTools > Application > Service Workers and ensure `sw.js` is registered and the cache (`subjects-graph-cache-v1`) contains `index.html` and `data.json`.
+4. In DevTools > Application > Service Workers, check "Offline" and refresh.
+5. Confirm the app still loads and you can interact with it (cycle statuses, export/import, etc.).
+
+Notes: iOS Safari has limited Service Worker support and may not provide the full PWA experience.
 
 ## File Structure
 
 ```
 subjects-graph/
-├── public/
+├── docs/
 │   ├── index.html        # Main HTML
 │   ├── app.js            # Application logic
 │   ├── styles.css        # Styles
@@ -102,7 +128,7 @@ subjects-graph/
 
 ### Adding a New Variant
 
-Edit `public/data.json`:
+Edit `docs/data.json`:
 
 ```json
 {
@@ -178,7 +204,7 @@ Contributions are welcome! You can help by:
 ### Adding Your University's Curriculum
 
 1. Fork the repository
-2. Add your variant to `public/data.json` following the existing format
+2. Add your variant to `docs/data.json` following the existing format
 3. Submit a pull request with your curriculum name in the title
 
 ## License

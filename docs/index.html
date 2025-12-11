@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grafo de Materias - UTN FRBA</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0d1117">
+    <link rel="icon" href="icons/icon-192.svg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
     <script src="cytoscape.min.js"></script>
     <script src="lucide.min.js"></script>
 </head>
@@ -104,6 +110,39 @@
     </div>
 
     <!-- Load app -->
-    <script src="app.js"></script>
+        <script>
+            // Register service worker and handle PWA install prompt
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker registered'))
+                    .catch((err) => console.log('Service Worker registration failed:', err));
+            }
+
+            let deferredPrompt;
+            const installBtn = document.getElementById('install-button');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevent Chrome 67 and earlier from automatically showing the prompt
+                e.preventDefault();
+                deferredPrompt = e;
+                // Update UI to notify the user they can add to home screen
+                installBtn.style.display = 'inline-block';
+            });
+
+            installBtn && installBtn.addEventListener('click', async () => {
+                installBtn.style.display = 'none';
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const choice = await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    if (choice.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                }
+            });
+        </script>
+        <script src="app.js"></script>
 </body>
 </html>
