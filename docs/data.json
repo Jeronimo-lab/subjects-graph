@@ -50,7 +50,7 @@
           "name": "Teoría de Control",
           "prerequisites": {
             "FINAL_EXAM_PENDING": ["Q", "MS"],
-            "APPROVED": ["AM1", "F2"]
+            "APPROVED": ["AM2", "F2"]
           },
           "position": { "x": 700, "y": 100 }
         },

@@ -594,25 +594,121 @@
         node.data('borderState', satisfiedStatus || defaultStatusId);
       });
 
-      // Update edge colors based on source node
-      cy.edges().forEach(edge => {
-        const sourceNode = edge.source();
-        const sourceType = sourceNode.data('nodeType');
+      // Helper: get ultimate target subject (follows connector chains)
+      const getUltimateTarget = (nodeId) => {
+        const linkData = currentLinks.find(l => l.id === nodeId);
+        if (!linkData) return nodeId;
+        if (linkData.destinations && linkData.destinations.length > 0) {
+          return getUltimateTarget(linkData.destinations[0]);
+        }
+        return nodeId;
+      };
 
-        let satisfiedStatus = null;
+      // Helper: get ultimate source subjects (follows connector chains backwards)
+      const getUltimateSourceSubjects = (nodeId) => {
+        const linkData = currentLinks.find(l => l.id === nodeId);
+        if (!linkData) return [nodeId]; // It's a subject
+        const subjects = [];
+        for (const srcId of (linkData.sources || [])) {
+          subjects.push(...getUltimateSourceSubjects(srcId));
+        }
+        return subjects;
+      };
 
-        if (sourceType === 'connector') {
-          const ultimateSources = getUltimateSubjectSources(sourceNode.id());
-          satisfiedStatus = getSourcesSatisfiedStatus(ultimateSources);
-        } else if (sourceType === 'subject') {
-          satisfiedStatus = getSourcesSatisfiedStatus([sourceNode.id()]);
+      // Helper: get required status for a source in target's prerequisites
+      const getRequiredStatus = (sourceId, targetId) => {
+        const targetData = currentSubjects.find(s => s.id === targetId);
+        if (!targetData || !targetData.prerequisites) return null;
+
+        for (const [requiredStatus, subjectIds] of Object.entries(targetData.prerequisites)) {
+          if (subjectIds.includes(sourceId)) return requiredStatus;
+        }
+        return null;
+      };
+
+      // Helper: get full transitive subtree for a subject (subject + all prereqs recursively)
+      const getSubtree = (subjectId, visited = new Set()) => {
+        if (visited.has(subjectId)) return [];
+        visited.add(subjectId);
+
+        const result = [subjectId];
+        const subjectData = currentSubjects.find(s => s.id === subjectId);
+        if (!subjectData || !subjectData.prerequisites) return result;
+
+        // Add all prerequisites recursively
+        for (const prereqIds of Object.values(subjectData.prerequisites)) {
+          for (const prereqId of prereqIds) {
+            result.push(...getSubtree(prereqId, visited));
+          }
+        }
+        return result;
+      };
+
+      // Helper: check if source's subtree satisfies target's requirements
+      // Only checks subjects from subtree that are LISTED in target's prerequisites
+      const getEffectiveSourceStatus = (sourceId, targetId) => {
+        const targetData = currentSubjects.find(s => s.id === targetId);
+        if (!targetData) return defaultStatusId;
+
+        const targetPrereqs = targetData.prerequisites || {};
+        const subtree = new Set(getSubtree(sourceId));
+
+        // For each subject in subtree that's listed in target's prereqs, check if met
+        let minStatusIndex = STATUS_ORDER.length - 1;
+
+        for (const [requiredStatus, subjectIds] of Object.entries(targetPrereqs)) {
+          for (const subjId of subjectIds) {
+            if (subtree.has(subjId)) {
+              // This subject is in our subtree AND listed in target's prereqs
+              const subjStatus = getNodeStatus(subjId);
+              if (!statusMeetsMinimum(subjStatus, requiredStatus)) {
+                return defaultStatusId; // Requirement not met
+              }
+              // Track minimum status
+              const subjIndex = getStatusIndex(subjStatus);
+              minStatusIndex = Math.min(minStatusIndex, subjIndex);
+            }
+          }
         }
 
-        const edgeColor = STATUS_BORDER_COLORS[satisfiedStatus] || STATUS_BORDER_COLORS[defaultStatusId];
-        edge.style({
-          'line-color': edgeColor,
-          'target-arrow-color': edgeColor
-        });
+        return STATUS_ORDER[minStatusIndex] || defaultStatusId;
+      };
+
+      // Update edge colors based on source's effective status (including its subtree)
+      cy.edges().forEach(edge => {
+        const sourceNode = edge.source();
+        const targetNode = edge.target();
+
+        // Find ultimate target and sources
+        const ultimateTargetId = getUltimateTarget(targetNode.id());
+        const ultimateSourceIds = getUltimateSourceSubjects(sourceNode.id());
+
+        // Get effective status for each source (considering their subtrees)
+        let minEffectiveIndex = STATUS_ORDER.length - 1;
+        let anyFailed = false;
+
+        for (const srcId of ultimateSourceIds) {
+          const effectiveStatus = getEffectiveSourceStatus(srcId, ultimateTargetId);
+
+          if (effectiveStatus === defaultStatusId) {
+            anyFailed = true;
+            break;
+          }
+
+          const effectiveIndex = getStatusIndex(effectiveStatus);
+          minEffectiveIndex = Math.min(minEffectiveIndex, effectiveIndex);
+        }
+
+        if (anyFailed) {
+          const edgeColor = STATUS_BORDER_COLORS[defaultStatusId];
+          edge.style({ 'line-color': edgeColor, 'target-arrow-color': edgeColor });
+          return;
+        }
+
+        // All sources meet requirements with their subtrees → show effective status
+        const effectiveStatus = STATUS_ORDER[minEffectiveIndex] || defaultStatusId;
+        const edgeColor = STATUS_BORDER_COLORS[effectiveStatus] || STATUS_BORDER_COLORS[defaultStatusId];
+        edge.style({ 'line-color': edgeColor, 'target-arrow-color': edgeColor });
       });
 
       // Update progress circle
