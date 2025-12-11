@@ -220,6 +220,7 @@ BSD 3-Clause License - see [LICENSE](LICENSE)
 
 - [Cytoscape.js](https://js.cytoscape.org/) - Graph visualization
 - [Lucide](https://lucide.dev/) - Icons
+- [GitHub Corner](https://github.com/tholman/github-corners) - "Fork me on GitHub" banner
 
 ---
 
