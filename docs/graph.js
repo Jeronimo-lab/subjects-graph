@@ -1,7 +1,20 @@
 /**
- * @typedef {string} AvailabilityId
+ * @typedef {object} Variant
+ * @property {string} name
+ * @property {Array<Status>} statuses
+ * @property {Array<Availability>} availabilities
+ * @property {Array<Omit<Subject, 'status'>>} subjects
+ * @property {Array<Edge>} edges
  *
- * @typedef {string} StatusId
+ * @typedef {object} Config
+ * @property {Array<Status>} statuses
+ * @property {Array<Availability>} availabilities
+ *
+ * @typedef {object} Edge
+ * @property {string} id
+ * @property {Position} position
+ * @property {Array<string>} dependencies
+ * @property {Array<string>} targets
  *
  * @typedef {object} Subject
  * @property {string} id
@@ -18,36 +31,42 @@
  * @property {StatusId} statusId
  * @property {Array<string>} subjects
  *
- * @typedef {object} Edge
- * @property {string} id
- * @property {Position} position
- * @property {Array<string>} dependencies
- * @property {Array<string>} targets
- *
- * @typedef {object} Variant
- * @property {string} name
- * @property {Array<Status>} statuses
- * @property {Array<Availability>} availabilities
- * @property {Array<Omit<Subject, 'status'>>} subjects
- * @property {Array<Edge>} edges
- *
- * @typedef {object} Config
- * @property {Array<Status>} statuses
- * @property {Array<Availability>} availabilities
- *
- * @typedef {object} Status
- * @property {StatusId} id
- * @property {string} name
- * @property {string} color
- *
  * @typedef {object} Availability
  * @property {AvailabilityId} id
  * @property {string} name
  * @property {string} color
  *
- * @typedef {object} Position
- * @property {number} x
- * @property {number} y
+ * @typedef {object} Status
+ * @property {StatusId} id
+ * @property {string} name
+ * @property {string} color
+ * 
+ * @typedef {string} StatusId
+ *
+ * @typedef {string} AvailabilityId
+ * 
+ * ---
+ * 
+ * @typedef {object} Drawer
+ * @property {(params: Circle) => void} drawCircle
+ * @property {(params: Diamond) => void} drawDiamond
+ * @property {(params: Hidden) => void} drawEdge
+ * @property {(params: Arrow) => void} drawArrow
+ *
+ * @typedef {object} Arrow
+ * @property {string} id
+ * @property {string} from
+ * @property {string} to
+ * @property {string} color
+ *
+ * @typedef {object} Hidden
+ * @property {string} id
+ * @property {Position} position
+ *
+ * @typedef {object} Diamond
+ * @property {string} id
+ * @property {Position} position
+ * @property {string} borderColor
  *
  * @typedef {object} Circle
  * @property {string} label
@@ -56,37 +75,17 @@
  * @property {string} fillColor
  * @property {string} borderColor
  *
- * @typedef {object} Diamond
- * @property {string} id
- * @property {Position} position
- * @property {string} borderColor
- *
- * @typedef {object} Hidden
- * @property {string} id
- * @property {Position} position
- *
- * @typedef {object} Arrow
- * @property {string} id
- * @property {string} from
- * @property {string} to
- * @property {string} color
- *
- * @typedef {object} Drawer
- * @property {(params: Circle) => void} drawCircle
- * @property {(params: Diamond) => void} drawDiamond
- * @property {(params: Hidden) => void} drawEdge
- * @property {(params: Arrow) => void} drawArrow
+ * @typedef {object} Position
+ * @property {number} x
+ * @property {number} y
  */
 
 export class Graph {
   /** @type {Config} */
   #config;
 
-  /** @type {Map<string, SubjectNode>} */
-  #subjects;
-
-  /** @type {Map<string, EdgeNode>} */
-  #edges;
+  /** @type {Map<string, AbstractNode>} */
+  #nodes;
 
   /**
    * @param {Config} config
@@ -95,19 +94,14 @@ export class Graph {
    */
   constructor(config, subjects, edges) {
     this.#config = config;
-    this.#subjects = new Map();
+    this.#nodes = new Map();
     for (const subject of subjects) {
       this.#addSubject(subject);
     }
-    this.#edges = new Map();
     for (const edge of edges) {
       this.#addEdge(edge);
     }
     this.#calculateDependencies();
-  }
-
-  get #nodes() {
-    return [...this.#subjects.values(), ...this.#edges.values()];
   }
 
   /**
@@ -115,11 +109,11 @@ export class Graph {
    * @param {Subject} subject
    */
   #addSubject(subject) {
-    if (this.#subjects.has(subject.id)) {
-      console.warn(`Subject with ID ${subject.id} already exists in the graph.`);
+    if (this.#nodes.has(subject.id)) {
+      console.warn(`Node with ID ${subject.id} already exists in the graph.`);
       return;
     }
-    this.#subjects.set(subject.id, new SubjectNode(this.#config, subject));
+    this.#nodes.set(subject.id, new SubjectNode(this.#config, subject));
   }
 
   /**
@@ -127,21 +121,21 @@ export class Graph {
    * @param {Edge} edge
    */
   #addEdge(edge) {
-    if (this.#edges.has(edge.id)) {
-      console.warn(`Edge with ID ${edge.id} already exists in the graph.`);
+    if (this.#nodes.has(edge.id)) {
+      console.warn(`Node with ID ${edge.id} already exists in the graph.`);
       return;
     }
-    this.#edges.set(edge.id, new EdgeNode(this.#config, edge));
+    this.#nodes.set(edge.id, new EdgeNode(this.#config, edge));
   }
 
   /**
    * Calculates all dependencies in the graph based on subjects and edges.
    */
   #calculateDependencies() {
-    for (const node of this.#nodes) {
+    for (const node of this.#nodes.values()) {
       node.calculateDependencies(this);
     }
-    for (const node of this.#nodes) {
+    for (const node of this.#nodes.values()) {
       node.simplifyTransitiveDependencies();
     }
   }
@@ -152,13 +146,7 @@ export class Graph {
    * @return {AbstractNode | null}
    */
   getNodeById(id) {
-    if (this.#subjects.has(id)) {
-      return this.#subjects.get(id) ?? null;
-    }
-    if (this.#edges.has(id)) {
-      return this.#edges.get(id) ?? null;
-    }
-    return null;
+    return this.#nodes.get(id) ?? null;
   }
 
   /**
@@ -166,10 +154,10 @@ export class Graph {
    * @param {Drawer} drawer
    */
   render(drawer) {
-    for (const node of this.#nodes) {
-       node.renderNode(drawer);
+    for (const node of this.#nodes.values()) {
+      node.renderNode(drawer);
     }
-    for (const node of this.#nodes) {
+    for (const node of this.#nodes.values()) {
       node.renderLinks(drawer);
     }
   }
@@ -199,11 +187,6 @@ class AbstractNode {
   /** @returns {string} */
   get id() {
     throw new Error('Getter id() must be implemented in subclasses');
-  }
-
-  /** @returns {Position} */
-  get position() {
-    throw new Error('Getter position() must be implemented in subclasses');
   }
 
   /**
@@ -281,15 +264,6 @@ class AbstractNode {
   }
 
   /**
-   * Gets the prerequisites for a specific availability level.
-   * @param {string} availabilityId
-   * @returns {Array<Prerequisite>}
-   */
-  getPrerequisitesById(availabilityId) {
-    throw new Error('Method getPrerequisitesById() must be implemented in subclasses');
-  }
-
-  /**
    * Checks if this node satisfies the given subject and status.
    * @param {string} subjectId
    * @param {StatusId} statusId
@@ -341,10 +315,6 @@ class SubjectNode extends AbstractNode {
     return this.#data.id;
   }
 
-  get position() {
-    return this.#data.position;
-  }
-
   /**
    * @param {Graph} graph
    */
@@ -363,29 +333,18 @@ class SubjectNode extends AbstractNode {
   }
 
   /**
-   * Renders the node and its links.
-   * @param {Drawer} drawer
-   */
-  /**
    * Renders the node (shape only). Links are rendered separately by
    * `renderLinks` to allow graphs to draw nodes first and arrows later.
    * @param {Drawer} drawer
    */
   renderNode(drawer) {
-    const status = this.#config.statuses.find(s => s.id === this.#data.status);
-    const availability = this.getAvailability();
-
-    if (!status || !availability) {
-      console.warn(`Status or availability not found for subject ID ${this.#data.id}.`);
-      return;
-    }
-
+    const status = this.#config.statuses.find(s => s.id === this.#data.status) ?? this.#config.statuses[0];
     drawer.drawCircle({
       label: this.#data.id,
       tooltip: this.#data.name,
       position: this.#data.position,
       fillColor: status.color,
-      borderColor: availability.color,
+      borderColor: this.getAvailability().color,
     });
   }
 
@@ -437,15 +396,6 @@ class SubjectNode extends AbstractNode {
     for (const subj of super.getAllSubjects(visited)) set.add(subj);
     return set;
   }
-
-  /**
-   * @param {string} availabilityId
-   * @returns {Array<Prerequisite>}
-   */
-  getPrerequisitesById(availabilityId) {
-    const prereq = this.#data.prerequisites.find(p => p.availabilityId === availabilityId);
-    return prereq ? [prereq] : [];
-  }
 }
 
 class EdgeNode extends AbstractNode {
@@ -473,10 +423,6 @@ class EdgeNode extends AbstractNode {
     return this.#data.id;
   }
 
-  get position() {
-    return this.#data.position;
-  }
-
   /**
    * @param {Graph} graph
    */
@@ -500,34 +446,25 @@ class EdgeNode extends AbstractNode {
   }
 
   /**
-   * Renders the node and its links.
-   * @param {Drawer} drawer
-   */
-  /**
    * Renders the node (shape only). Links are rendered separately by
    * `renderLinks` to allow graphs to draw nodes first and arrows later.
    * @param {Drawer} drawer
    */
   renderNode(drawer) {
-    const availability = this.getAvailability();
-    if (!availability) {
-      console.warn(`Availability not found for edge ID ${this.#data.id}.`);
-      return;
-    }
-
     // Use drawEdge for 1:1 edges (invisible), drawDiamond for many-to-many
     if (this.#data.dependencies.length === 1 && this.#targets.length === 1) {
       drawer.drawEdge({
         id: this.#data.id,
         position: this.#data.position,
       });
-    } else {
-      drawer.drawDiamond({
-        id: this.#data.id,
-        position: this.#data.position,
-        borderColor: availability.color,
-      });
+      return;
     }
+
+    drawer.drawDiamond({
+      id: this.#data.id,
+      position: this.#data.position,
+      borderColor: this.getAvailability().color,
+    });
   }
 
   /**
@@ -539,22 +476,13 @@ class EdgeNode extends AbstractNode {
     let last = this.#config.availabilities[0];
 
     for (const [idx, a] of this.#config.availabilities.entries()) {
-      if (this.#targets.some(target => this.#config.availabilities.indexOf(target.getAvailability(subjects)) < idx)) {
+      if (this.#targets.some(t => this.#config.availabilities.indexOf(t.getAvailability(subjects)) < idx)) {
         break;
       }
       last = a;
     }
 
     return last;
-  }
-
-  /**
-   * Gets the combined prerequisites for a specific availability level from all targets.
-   * @param {string} availabilityId
-   * @returns {Array<Prerequisite>}
-   */
-  getPrerequisitesById(availabilityId) {
-    return this.#targets.flatMap(target => target.from.getPrerequisitesById(availabilityId));
   }
 }
 
@@ -586,19 +514,17 @@ class Link {
    * @param {Drawer} drawer
    */
   render(drawer) {
-    const availability = this.getAvailability();
-    if (!availability) {
-      console.warn('Availability not found for link rendering.');
-      return;
-    }
-
-    const edgeId = `${this.from.id}-${this.#to.id}`;
     if (!this.from.id || !this.#to.id) {
       console.warn('Cannot render link: missing fromId or toId.', { fromId: this.from.id, toId: this.#to.id });
       return;
     }
 
-    drawer.drawArrow({ id: edgeId, from: this.from.id, to: this.#to.id, color: availability.color });
+    drawer.drawArrow({
+      id: `${this.from.id}-${this.#to.id}`,
+      from: this.from.id,
+      to: this.#to.id,
+      color: this.getAvailability().color,
+    });
   }
 
   /**
