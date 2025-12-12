@@ -158,35 +158,36 @@ describe('Transitive deduplication', () => {
   });
 });
 
-describe('Edge nodes (AGA + AM1 -> link3 -> AM2)', () => {
-  // link3 connects AGA + AM1 to AM2
-  // AM2 needs both AGA and AM1 (FINAL_EXAM_PENDING for FEP, APPROVED for APPROVED)
+describe('Edge nodes (AGA + AM1 -> link3 -> AM2, PyE)', () => {
+  // link3 connects AGA + AM1 to AM2 and PyE (two targets)
+  // Both AM2 and PyE need AGA and AM1 (FINAL_EXAM_PENDING for FEP, APPROVED for APPROVED)
   // All 9 combinations (3x3) for AGA and AM1 statuses
   const testCases = [
-    // Both INACTIVE -> arrows INACTIVE, edge INACTIVE, AM2 INACTIVE
-    { statuses: ['INACTIVE', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'INACTIVE', 'AM1-link3': 'INACTIVE', 'link3-AM2': 'INACTIVE' } },
-    // One FEP, one INACTIVE -> arrows reflect individual status, edge INACTIVE (not all satisfied)
-    { statuses: ['FINAL_EXAM_PENDING', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_PENDING', 'AM1-link3': 'INACTIVE', 'link3-AM2': 'INACTIVE' } },
-    { statuses: ['INACTIVE', 'FINAL_EXAM_PENDING', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'INACTIVE', 'AM1-link3': 'FINAL_EXAM_PENDING', 'link3-AM2': 'INACTIVE' } },
-    // Both FEP -> edge FEP, AM2 FEP
-    { statuses: ['FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_PENDING', 'AM1-link3': 'FINAL_EXAM_PENDING', 'link3-AM2': 'FINAL_EXAM_PENDING' } },
+    // Both INACTIVE -> edge INACTIVE, targets INACTIVE
+    { statuses: ['INACTIVE', 'INACTIVE', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'INACTIVE', 'AM1-link3': 'INACTIVE', 'link3-AM2': 'INACTIVE', 'link3-PyE': 'INACTIVE' } },
+    // One FEP, one INACTIVE -> edge INACTIVE
+    { statuses: ['FINAL_EXAM_PENDING', 'INACTIVE', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_PENDING', 'AM1-link3': 'INACTIVE', 'link3-AM2': 'INACTIVE', 'link3-PyE': 'INACTIVE' } },
+    { statuses: ['INACTIVE', 'FINAL_EXAM_PENDING', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'INACTIVE', 'AM1-link3': 'FINAL_EXAM_PENDING', 'link3-AM2': 'INACTIVE', 'link3-PyE': 'INACTIVE' } },
+    // Both FEP -> edge FEP, targets FEP
+    { statuses: ['FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_PENDING', 'AM1-link3': 'FINAL_EXAM_PENDING', 'link3-AM2': 'FINAL_EXAM_PENDING', 'link3-PyE': 'FINAL_EXAM_PENDING' } },
     // One APPROVED, one INACTIVE -> edge INACTIVE
-    { statuses: ['APPROVED', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'APPROVED', 'AM1-link3': 'INACTIVE', 'link3-AM2': 'INACTIVE' } },
-    { statuses: ['INACTIVE', 'APPROVED', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'INACTIVE', 'AM1-link3': 'APPROVED', 'link3-AM2': 'INACTIVE' } },
+    { statuses: ['APPROVED', 'INACTIVE', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'APPROVED', 'AM1-link3': 'INACTIVE', 'link3-AM2': 'INACTIVE', 'link3-PyE': 'INACTIVE' } },
+    { statuses: ['INACTIVE', 'APPROVED', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE', 'INACTIVE'], arrowAvailabilities: { 'AGA-link3': 'INACTIVE', 'AM1-link3': 'APPROVED', 'link3-AM2': 'INACTIVE', 'link3-PyE': 'INACTIVE' } },
     // One APPROVED, one FEP -> edge FEP (minimum)
-    { statuses: ['APPROVED', 'FINAL_EXAM_PENDING', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], arrowAvailabilities: { 'AGA-link3': 'APPROVED', 'AM1-link3': 'FINAL_EXAM_PENDING', 'link3-AM2': 'FINAL_EXAM_PENDING' } },
-    { statuses: ['FINAL_EXAM_PENDING', 'APPROVED', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_PENDING', 'AM1-link3': 'APPROVED', 'link3-AM2': 'FINAL_EXAM_PENDING' } },
-    // Both APPROVED -> edge APPROVED, AM2 APPROVED
-    { statuses: ['APPROVED', 'APPROVED', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'APPROVED', 'APPROVED'], arrowAvailabilities: { 'AGA-link3': 'APPROVED', 'AM1-link3': 'APPROVED', 'link3-AM2': 'APPROVED' } },
+    { statuses: ['APPROVED', 'FINAL_EXAM_PENDING', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], arrowAvailabilities: { 'AGA-link3': 'APPROVED', 'AM1-link3': 'FINAL_EXAM_PENDING', 'link3-AM2': 'FINAL_EXAM_PENDING', 'link3-PyE': 'FINAL_EXAM_PENDING' } },
+    { statuses: ['FINAL_EXAM_PENDING', 'APPROVED', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_PENDING', 'AM1-link3': 'APPROVED', 'link3-AM2': 'FINAL_EXAM_PENDING', 'link3-PyE': 'FINAL_EXAM_PENDING' } },
+    // Both APPROVED -> edge APPROVED, targets APPROVED
+    { statuses: ['APPROVED', 'APPROVED', 'INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED', 'APPROVED', 'APPROVED', 'APPROVED'], arrowAvailabilities: { 'AGA-link3': 'APPROVED', 'AM1-link3': 'APPROVED', 'link3-AM2': 'APPROVED', 'link3-PyE': 'APPROVED' } },
   ];
 
-  testCases.forEach(({ statuses: [agaStatus, am1Status, am2Status], availabilities: [agaAvail, am1Avail, link3Avail, am2Avail], arrowAvailabilities }) => {
+  testCases.forEach(({ statuses: [agaStatus, am1Status, am2Status, pyeStatus], availabilities: [agaAvail, am1Avail, link3Avail, am2Avail, pyeAvail], arrowAvailabilities }) => {
     it(`renders with AGA=${agaStatus}, AM1=${am1Status}`, () => {
-      const subjectIds = ['AGA', 'AM1', 'AM2'];
+      const subjectIds = ['AGA', 'AM1', 'AM2', 'PyE'];
       const testSubjects = subjects(
         ['AGA', agaStatus],
         ['AM1', am1Status],
         ['AM2', am2Status],
+        ['PyE', pyeStatus],
       );
       const testEdges = [edge('link3', subjectIds)];
 
@@ -194,8 +195,8 @@ describe('Edge nodes (AGA + AM1 -> link3 -> AM2)', () => {
       const drawer = createMockDrawer();
       graph.render(drawer);
 
-      // Should draw 3 circles (subjects) + 1 diamond (edge)
-      expect(drawer.shapes.circles).toHaveLength(3);
+      // Should draw 4 circles (subjects) + 1 diamond (edge)
+      expect(drawer.shapes.circles).toHaveLength(4);
       expect(drawer.shapes.diamonds).toHaveLength(1);
 
       // Check edge node border
@@ -205,8 +206,8 @@ describe('Edge nodes (AGA + AM1 -> link3 -> AM2)', () => {
         borderColor: availabilityColor(link3Avail),
       });
 
-      // Should draw 3 arrows: AGA->link3, AM1->link3, link3->AM2
-      expect(drawer.shapes.arrows).toHaveLength(3);
+      // Should draw 4 arrows: AGA->link3, AM1->link3, link3->AM2, link3->PyE
+      expect(drawer.shapes.arrows).toHaveLength(4);
       expect(drawer.shapes.arrows).toContainEqual({
         id: 'AGA-link3',
         from: 'AGA',
@@ -224,6 +225,12 @@ describe('Edge nodes (AGA + AM1 -> link3 -> AM2)', () => {
         from: 'link3',
         to: 'AM2',
         color: availabilityColor(arrowAvailabilities['link3-AM2']),
+      });
+      expect(drawer.shapes.arrows).toContainEqual({
+        id: 'link3-PyE',
+        from: 'link3',
+        to: 'PyE',
+        color: availabilityColor(arrowAvailabilities['link3-PyE']),
       });
     });
   });
