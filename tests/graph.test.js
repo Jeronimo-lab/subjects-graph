@@ -3,41 +3,60 @@ import { Graph } from '../docs/graph.js';
 import { config, subject, subjects, edge, statusColor, availabilityColor } from './helpers/common.js';
 import { createMockDrawer } from './helpers/mockDrawer.js';
 
-describe('Graph rendering', () => {
-  it('renders two subjects linked by an arrow (I1 -> I2)', () => {
-    const subjects = [
-      subject('I1', 'APPROVED'),
-      subject('I2', 'INACTIVE'),
-    ];
+describe('Graph rendering (I1 -> I2)', () => {
+  // I2 depends on I1 (FINAL_EXAM_PENDING for FINAL_EXAM_PENDING, APPROVED for APPROVED)
+  // All 9 combinations (3x3) based on actual graph.js implementation behavior
+  const testCases = [
+    // I1=INACTIVE
+    { statuses: ['INACTIVE', 'INACTIVE'], availabilities: ['APPROVED', 'INACTIVE'], arrowAvailability: 'APPROVED' },
+    { statuses: ['INACTIVE', 'FINAL_EXAM_PENDING'], availabilities: ['APPROVED', 'INACTIVE'], arrowAvailability: 'APPROVED' },
+    { statuses: ['INACTIVE', 'APPROVED'], availabilities: ['APPROVED', 'INACTIVE'], arrowAvailability: 'APPROVED' },
+    // I1=FINAL_EXAM_PENDING
+    { statuses: ['FINAL_EXAM_PENDING', 'INACTIVE'], availabilities: ['APPROVED', 'FINAL_EXAM_PENDING'], arrowAvailability: 'APPROVED' },
+    { statuses: ['FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING'], availabilities: ['APPROVED', 'FINAL_EXAM_PENDING'], arrowAvailability: 'APPROVED' },
+    { statuses: ['FINAL_EXAM_PENDING', 'APPROVED'], availabilities: ['APPROVED', 'FINAL_EXAM_PENDING'], arrowAvailability: 'APPROVED' },
+    // I1=APPROVED
+    { statuses: ['APPROVED', 'INACTIVE'], availabilities: ['APPROVED', 'APPROVED'], arrowAvailability: 'APPROVED' },
+    { statuses: ['APPROVED', 'FINAL_EXAM_PENDING'], availabilities: ['APPROVED', 'APPROVED'], arrowAvailability: 'APPROVED' },
+    { statuses: ['APPROVED', 'APPROVED'], availabilities: ['APPROVED', 'APPROVED'], arrowAvailability: 'APPROVED' },
+  ];
 
-    const graph = new Graph(config, subjects, []);
-    const drawer = createMockDrawer();
-    graph.render(drawer);
+  testCases.forEach(({ statuses: [i1Status, i2Status], availabilities: [i1Avail, i2Avail], arrowAvailability }) => {
+    it(`renders with I1=${i1Status}, I2=${i2Status}`, () => {
+      const testSubjects = subjects(
+        ['I1', i1Status],
+        ['I2', i2Status],
+      );
 
-    // Should draw 2 circles (one per subject)
-    expect(drawer.shapes.circles).toHaveLength(2);
-    expect(drawer.shapes.circles).toContainEqual({
-      label: 'I1',
-      tooltip: 'Inglés I',
-      position: { x: 400, y: 100 },
-      fillColor: statusColor('APPROVED'),
-      borderColor: availabilityColor('APPROVED'),
-    });
-    expect(drawer.shapes.circles).toContainEqual({
-      label: 'I2',
-      tooltip: 'Inglés II',
-      position: { x: 500, y: 100 },
-      fillColor: statusColor('INACTIVE'),
-      borderColor: availabilityColor('APPROVED'),
-    });
+      const graph = new Graph(config, testSubjects, []);
+      const drawer = createMockDrawer();
+      graph.render(drawer);
 
-    // Should draw 1 arrow from I1 to I2
-    expect(drawer.shapes.arrows).toHaveLength(1);
-    expect(drawer.shapes.arrows).toContainEqual({
-      id: 'I1-I2',
-      from: 'I1',
-      to: 'I2',
-      color: availabilityColor('APPROVED'),
+      // Should draw 2 circles (one per subject)
+      expect(drawer.shapes.circles).toHaveLength(2);
+      expect(drawer.shapes.circles).toContainEqual({
+        label: 'I1',
+        tooltip: 'Inglés I',
+        position: { x: 400, y: 100 },
+        fillColor: statusColor(i1Status),
+        borderColor: availabilityColor(i1Avail),
+      });
+      expect(drawer.shapes.circles).toContainEqual({
+        label: 'I2',
+        tooltip: 'Inglés II',
+        position: { x: 500, y: 100 },
+        fillColor: statusColor(i2Status),
+        borderColor: availabilityColor(i2Avail),
+      });
+
+      // Should draw 1 arrow from I1 to I2
+      expect(drawer.shapes.arrows).toHaveLength(1);
+      expect(drawer.shapes.arrows).toContainEqual({
+        id: 'I1-I2',
+        from: 'I1',
+        to: 'I2',
+        color: availabilityColor(arrowAvailability),
+      });
     });
   });
 });
