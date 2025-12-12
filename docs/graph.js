@@ -128,7 +128,7 @@ class AbstractNode {
     for (const link of this.#dependencies) {
       // Temporarily remove the link
       this.#dependencies.delete(link);
-      if (this.#dependsOn(link.to)) {
+      if (this.#dependsOn(link.from)) {
         continue; // This link is redundant
       }
       this.#dependencies.add(link); // Keep the link if it's not redundant
@@ -162,7 +162,7 @@ class AbstractNode {
    * @protected
    */
   _addDependency(node) {
-    this.#dependencies.add(new Link(this, node));
+    this.#dependencies.add(new Link(node, this));
   }
 }
 
@@ -223,22 +223,26 @@ class SubjectNode extends AbstractNode {
 }
 
 class EdgeNode extends AbstractNode {
+  /** @type {Edge} */
+  #data;
+
+  /** @type {Set<AbstractNode>} */
+  #targets;
+
   /**
    * @param {Edge} data
    */
   constructor(data) {
     super();
-    /** @type {Edge} */
-    this.data = data;
-    /** @type {Set<AbstractNode>} */
-    this.targets = new Set();
+    this.#data = data;
+    this.#targets = new Set();
   }
 
   /**
    * @param {Graph} graph
    */
   calculateDependencies(graph) {
-    this.data.dependencies.forEach(sourceId => {
+    this.#data.dependencies.forEach(sourceId => {
       const sourceNode = graph.getNodeById(sourceId);
       if (sourceNode) {
         this._addDependency(sourceNode);
@@ -246,10 +250,10 @@ class EdgeNode extends AbstractNode {
         log.warn(`Edge dependency with ID ${sourceId} not found in graph.`);
       }
     });
-    this.data.targets.forEach(targetId => {
+    this.#data.targets.forEach(targetId => {
       const targetNode = graph.getNodeById(targetId);
       if (targetNode) {
-        this.targets.add(targetNode);
+        this.#targets.add(targetNode);
       } else {
         log.warn(`Edge target with ID ${targetId} not found in graph.`);
       }
@@ -258,6 +262,12 @@ class EdgeNode extends AbstractNode {
 }
 
 class Link {
+  /** @type {AbstractNode} */
+  from;
+
+  /** @type {AbstractNode} */
+  #to;
+
   /**
    * Creates a link between two nodes.
    * The drawn arrow points from 'from' dependency to 'to' target.
@@ -265,9 +275,7 @@ class Link {
    * @param {AbstractNode} to
    */
   constructor(from, to) {
-    /** @type {AbstractNode} */
     this.from = from;
-    /** @type {AbstractNode} */
-    this.to = to;
+    this.#to = to;
   }
 }
