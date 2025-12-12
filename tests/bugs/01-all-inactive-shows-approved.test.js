@@ -10,13 +10,14 @@ import { createMockDrawer } from '../helpers/mockDrawer.js';
  * some arrows were incorrectly showing APPROVED color instead of PENDING.
  * Affected paths: F2 -> TdC, I1 -> AdR, DDS -> IA
  * 
- * Root cause: In Link.#getAvailability(), when checking if a source satisfies
- * a target's prerequisites for a given availability level, if the source was
- * NOT mentioned in the prerequisites, empty.every() returned true, incorrectly
- * passing the APPROVED check.
+ * Root cause: The getAvailability() methods used .findLast() which doesn't 
+ * break when a condition isn't met - it just skips to the next item. However,
+ * availability requirements are accumulative: to reach FINAL_EXAM_AVAILABLE,
+ * you must first satisfy ENROLL_AVAILABLE prerequisites.
  * 
- * Fix: Added check to ensure at least one source subject IS mentioned in the
- * target's prerequisites before considering that availability level satisfied.
+ * Fix: Changed to a procedural approach that iterates through each availability
+ * level in order and returns early when a level's prerequisites are not satisfied.
+ * This ensures accumulative requirements are properly enforced.
  * 
  * How to contribute bug fixes:
  * 1. Create a test file in tests/bugs/ that reproduces the bug
