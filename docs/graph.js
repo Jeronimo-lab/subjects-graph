@@ -150,6 +150,13 @@ class AbstractNode {
   }
 
   /**
+   * @param {Graph} graph
+   */
+  calculateDependencies(graph) {
+    throw new Error('Method calculateDependencies() must be implemented in subclasses');
+  }
+
+  /**
    * Simplifies graph by removing redundant direct dependencies.
    * A direct dependency is considered redundant if there exists an indirect
    * path to the same target node.
