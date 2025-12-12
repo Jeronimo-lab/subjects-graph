@@ -257,10 +257,13 @@ class AbstractNode {
    * Checks if this node satisfies the given subject and status.
    * @param {string} subjectId
    * @param {StatusId} statusId
+   * @param {Set<AbstractNode>} [visited=new Set()]
    */
-  satisfies(subjectId, statusId) {
+  satisfies(subjectId, statusId, visited = new Set()) {
+    if (visited.has(this)) return false;
+    visited.add(this);
     return Array.from(this.#dependencies)
-      .some(link => link.from.satisfies(subjectId, statusId));
+      .some(link => link.from.satisfies(subjectId, statusId, visited));
   }
 
   /**
@@ -367,15 +370,16 @@ class SubjectNode extends AbstractNode {
 
   /**
    * @param {string} subjectId
-   * @param {Subject} statusId
+   * @param {StatusId} statusId
+   * @param {Set<AbstractNode>} [visited=new Set()]
    */
-  satisfies(subjectId, statusId) {
+  satisfies(subjectId, statusId, visited = new Set()) {
     if (this.#data.id === subjectId) {
       return this.#config.statuses.findIndex(s => s.id === this.#data.status) >=
              this.#config.statuses.findIndex(s => s.id === statusId);
     }
 
-    return super.satisfies(subjectId, statusId);
+    return super.satisfies(subjectId, statusId, visited);
   }
 
   /**

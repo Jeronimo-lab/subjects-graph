@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Graph } from '../docs/graph.js';
-import { config, subject, subjects, edge, edges, statusColor, availabilityColor } from './helpers/common.js';
+import { config, subjects, edges, statusColor, availabilityColor } from './helpers/common.js';
 import { createMockDrawer } from './helpers/mockDrawer.js';
 
 describe('Graph rendering (I1 -> I2)', () => {
@@ -260,5 +260,43 @@ describe('Invisible edge nodes (F2 -> link19 -> link20 -> link21 -> link22 -> Td
     expect(drawer.shapes.arrows.map(a => a.id)).toEqual(
       expect.arrayContaining(['F2-link19', 'link19-link20', 'link20-link21', 'link21-link22', 'link22-TdC'])
     );
+  });
+});
+
+describe('Circular dependency protection', () => {
+  it('handles circular dependencies without infinite loop', () => {
+    // Create subjects with circular prerequisites: A depends on B, B depends on A
+    // This is a misconfiguration, but here we want to check that it is handled gracefully
+    const circularSubjects = [
+      {
+        id: 'A',
+        name: 'Subject A',
+        status: 'APPROVED',
+        prerequisites: [
+          { availabilityId: 'APPROVED', dependencies: [{ statusId: 'APPROVED', subjects: ['B'] }] },
+        ],
+        position: { x: 100, y: 100 },
+      },
+      {
+        id: 'B',
+        name: 'Subject B',
+        status: 'APPROVED',
+        prerequisites: [
+          { availabilityId: 'APPROVED', dependencies: [{ statusId: 'APPROVED', subjects: ['A'] }] },
+        ],
+        position: { x: 200, y: 100 },
+      },
+    ];
+
+    const graph = new Graph(config, circularSubjects, []);
+    const drawer = createMockDrawer();
+
+    // Should not hang - render completes
+    graph.render(drawer);
+
+    // Should draw both subjects
+    expect(drawer.shapes.circles).toHaveLength(2);
+    // Should draw arrows (A->B and B->A, but transitive dedup may remove one)
+    expect(drawer.shapes.arrows.length).toBeGreaterThanOrEqual(1);
   });
 });
