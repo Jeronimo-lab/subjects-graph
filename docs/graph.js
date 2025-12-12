@@ -142,17 +142,13 @@ class Graph {
  * @abstract
  */
 class AbstractNode {
-  /** @type {Config} */
-  #config;
-
   /** @type {Set<Link>} */
   #dependencies;
 
-  constructor(config) {
+  constructor() {
     if (new.target === AbstractNode) {
       throw new TypeError('Cannot instantiate AbstractNode');
     }
-    this.#config = config;
     this.#dependencies = new Set();
   }
 
@@ -253,7 +249,7 @@ class SubjectNode extends AbstractNode {
    * @param {Subject} data
    */
   constructor(config, data) {
-    super(config);
+    super();
     this.#config = config;
     this.#data = data;
   }
@@ -351,7 +347,7 @@ class EdgeNode extends AbstractNode {
    * @param {Edge} data
    */
   constructor(config, data) {
-    super(config);
+    super();
     this.#config = config;
     this.#data = data;
     this.#targets = [];
