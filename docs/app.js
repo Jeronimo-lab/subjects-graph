@@ -564,8 +564,9 @@ import { Graph } from './graph.js';
         // Load the cytoscape image and composite with progress gauge
         const img = new Image();
         img.onload = () => {
-          const paddingX = 150 * scale; // Horizontal padding
-          const paddingY = 50 * scale;  // Vertical padding
+          // Padding proportional to image size (10% horizontal, 5% vertical)
+          const paddingX = img.width * 0.1;
+          const paddingY = img.height * 0.05;
           const canvas = document.createElement('canvas');
           canvas.width = img.width + paddingX * 2;
           canvas.height = img.height + paddingY * 2;
@@ -604,8 +605,10 @@ import { Graph } from './graph.js';
       const gaugeScale = minDimension / 800;
 
       const size = 120 * gaugeScale;
-      const x = ctx.canvas.width - size - 30 * gaugeScale;
-      const y = ctx.canvas.height - size - 30 * gaugeScale;
+      // Position offset scales with gauge size for consistency
+      const offset = 30 * gaugeScale;
+      const x = ctx.canvas.width - size - offset;
+      const y = ctx.canvas.height - size - offset;
       const centerX = x + size / 2;
       const centerY = y + size / 2;
       const radius = 45 * gaugeScale;
