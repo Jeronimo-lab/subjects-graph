@@ -6,6 +6,7 @@
  * @typedef {object} Subject
  * @property {string} id
  * @property {string} name
+ * @property {Position} position
  * @property {StatusId} status
  * @property {Array<Prerequisite>} prerequisites
  *
@@ -19,6 +20,7 @@
  *
  * @typedef {object} Edge
  * @property {string} id
+ * @property {Position} position
  * @property {Array<string>} dependencies
  * @property {Array<string>} targets
  *
@@ -35,6 +37,10 @@
  * @property {AvailabilityId} id
  * @property {string} name
  * @property {string} color
+ *
+ * @typedef {object} Position
+ * @property {number} x
+ * @property {number} y
  */
 
 class Graph {
@@ -180,6 +186,22 @@ class AbstractNode {
     return Array.from(this.#dependencies)
       .some(link => link.from._hasDependency(subjectId, statusId));
   }
+
+  /**
+   * Renders the node and its links.
+   */
+  render() {
+    for (const link of this.#dependencies) {
+      link.render();
+    }
+  }
+
+  /**
+   * @returns {Availability}
+   */
+  getAvailability() {
+    throw new Error('Method getAvailability() must be implemented in subclasses');
+  }
 }
 
 class SubjectNode extends AbstractNode {
@@ -217,11 +239,39 @@ class SubjectNode extends AbstractNode {
   }
 
   /**
+   * Renders the subject node.
+   */
+  render() {
+    const status = this.#config.statuses.find(s => s.id === this.#data.status);
+    const availability = this.getAvailability();
+
+    if (!status || !availability) {
+      log.warn(`Status or availability not found for subject ID ${this.#data.id}.`);
+      return;
+    }
+
+    // TODO: Render subject-specific details
+    // Example rendering logic (pseudo-code)
+    /*
+    drawCircle({
+      label: this.#data.id,
+      tooltip: this.#data.name,
+      position: this.#data.position,
+      fillColor: status.color,
+      borderColor: availability.color,
+    });
+    */
+
+    super.render();
+  }
+
+  /**
    * Gets the availability status of the subject based on its prerequisites.
    * @returns {Availability}
    */
-  #getAvailability() {
-    return this.#config.availabilities.findLast(a => this.#satisfiesAvailability(a.id));
+  getAvailability() {
+    return this.#config.availabilities
+      .findLast(a => this.#satisfiesAvailability(a.id));
   }
 
   /**
@@ -260,7 +310,7 @@ class EdgeNode extends AbstractNode {
   /** @type {Edge} */
   #data;
 
-  /** @type {Set<AbstractNode>} */
+  /** @type {Array<AbstractNode>} */
   #targets;
 
   /**
@@ -271,7 +321,7 @@ class EdgeNode extends AbstractNode {
     super(config);
     this.#config = config;
     this.#data = data;
-    this.#targets = new Set();
+    this.#targets = [];
   }
 
   /**
@@ -289,11 +339,20 @@ class EdgeNode extends AbstractNode {
     this.#data.targets.forEach(targetId => {
       const targetNode = graph.getNodeById(targetId);
       if (targetNode) {
-        this.#targets.add(targetNode);
+        this.#targets.push(targetNode);
       } else {
         log.warn(`Edge target with ID ${targetId} not found in graph.`);
       }
     });
+  }
+
+  /**
+   * Gets the availability status of the edge based on its target nodes.
+   * @returns {Availability}
+   */
+  getAvailability() {
+    return this.#config.availabilities
+      .find(a => this.#targets.map(t => t.getAvailability()).includes(a))
   }
 }
 
@@ -318,5 +377,24 @@ class Link {
     this.#config = config;
     this.from = from;
     this.#to = to;
+  }
+
+  /**
+   * Renders the link between nodes.
+   */
+  render() {
+    // TODO: Implement link rendering logic
+    // Example rendering logic (pseudo-code)
+    /*
+    drawArrow({
+      from: this.from.position,
+      to: this.#to.position,
+      color: getAvailability().color,
+    });
+    */
+  }
+
+  #getAvailability() {
+    return this.#config.availabilities[0]; // TODO: Calculate availability
   }
 }
