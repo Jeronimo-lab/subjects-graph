@@ -40,11 +40,11 @@ describe('Full graph with all INACTIVE subjects', () => {
     // F2 -> TdC chain (through link19, link20, link21, link22)
     const f2Arrow = drawer.shapes.arrows.find(a => a.id === 'F2-link19');
     expect(f2Arrow, 'F2-link19 arrow should exist').toBeDefined();
-    expect(f2Arrow.color).toBe(availabilityColor('INACTIVE'));
+    expect(f2Arrow?.color).toBe(availabilityColor('INACTIVE'));
 
     const link22Arrow = drawer.shapes.arrows.find(a => a.id === 'link22-TdC');
     expect(link22Arrow, 'link22-TdC arrow should exist').toBeDefined();
-    expect(link22Arrow.color).toBe(availabilityColor('INACTIVE'));
+    expect(link22Arrow?.color).toBe(availabilityColor('INACTIVE'));
 
     // I1 -> AdR (direct or through edges)
     const i1Arrows = drawer.shapes.arrows.filter(a => a.id.startsWith('I1-'));

@@ -5,10 +5,12 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "moduleResolution": "node",
+    "resolveJsonModule": true,
     "target": "ES2023",
     "module": "ES2020",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vitest/globals"]
   },
-  "include": ["docs/**/*.js", "tests/**/*.js"],
+  "include": ["docs/graph.js", "tests/**/*.js"],
   "exclude": ["docs/cytoscape.min.js", "docs/lucide.min.js", "node_modules"]
 }

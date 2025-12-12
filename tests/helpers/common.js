@@ -1,20 +1,40 @@
+/** @typedef {import('../../docs/graph.js').Config} Config */
+/** @typedef {import('../../docs/graph.js').Variant} Variant */
+/** @typedef {import('../../docs/graph.js').Subject} Subject */
+/** @typedef {import('../../docs/graph.js').Edge} Edge */
+/** @typedef {import('../../docs/graph.js').StatusId} StatusId */
+/** @typedef {import('../../docs/graph.js').AvailabilityId} AvailabilityId */
+
 import data from '../../docs/data.json';
 
 // Load config from default variant
+/** @type {Variant} */
+// @ts-ignore - JSON import with dynamic key is safe
 const variant = data.variants[data.defaultVariant];
+
+/** @type {Config} */
 export const config = {
   statuses: variant.statuses,
   availabilities: variant.availabilities,
 };
 
-// Utility: get subject by id with a given status
+/**
+ * Utility: get subject by id with a given status
+ * @param {string} id
+ * @param {StatusId} status
+ * @returns {Subject}
+ */
 export function subject(id, status) {
   const subjectData = variant.subjects.find(s => s.id === id);
   if (!subjectData) throw new Error(`Subject ${id} not found`);
   return { ...subjectData, status };
 }
 
-// Utility: get multiple subjects, filtering dependencies to only include listed subjects
+/**
+ * Utility: get multiple subjects, filtering dependencies to only include listed subjects
+ * @param {Array<[string, StatusId]>} entries
+ * @returns {Array<Subject>}
+ */
 export function subjects(...entries) {
   const ids = entries.map(([id]) => id);
   return entries.map(([id, status]) => {
@@ -34,7 +54,12 @@ export function subjects(...entries) {
   });
 }
 
-// Utility: get edge by id, filtering to only include specified ids (subjects + edges)
+/**
+ * Utility: get edge by id, filtering to only include specified ids (subjects + edges)
+ * @param {string} id
+ * @param {Array<string>} filterIds
+ * @returns {Edge}
+ */
 export function edge(id, filterIds) {
   const edgeData = variant.edges.find(e => e.id === id);
   if (!edgeData) throw new Error(`Edge ${id} not found`);
@@ -45,15 +70,30 @@ export function edge(id, filterIds) {
   };
 }
 
-// Utility: get multiple edges, auto-filtering to include only specified subjects and edge ids
+/**
+ * Utility: get multiple edges, auto-filtering to include only specified subjects and edge ids
+ * @param {Array<string>} edgeIds
+ * @param {Array<string>} subjectIds
+ * @returns {Array<Edge>}
+ */
 export function edges(edgeIds, subjectIds) {
   const allIds = [...subjectIds, ...edgeIds];
   return edgeIds.map(id => edge(id, allIds));
 }
 
-// Helper to get color for a status/availability
-export const statusColor = (statusId) => config.statuses.find(s => s.id === statusId).color;
-export const availabilityColor = (availId) => config.availabilities.find(a => a.id === availId).color;
+/**
+ * Helper to get color for a status
+ * @param {StatusId} statusId
+ * @returns {string}
+ */
+export const statusColor = (statusId) => config.statuses.find(s => s.id === statusId)?.color ?? '';
+
+/**
+ * Helper to get color for an availability
+ * @param {AvailabilityId} availId
+ * @returns {string}
+ */
+export const availabilityColor = (availId) => config.availabilities.find(a => a.id === availId)?.color ?? '';
 
 // Export full variant data for comprehensive tests
 export const fullVariant = {

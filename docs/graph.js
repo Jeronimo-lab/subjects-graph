@@ -24,6 +24,13 @@
  * @property {Array<string>} dependencies
  * @property {Array<string>} targets
  *
+ * @typedef {object} Variant
+ * @property {string} name
+ * @property {Array<Status>} statuses
+ * @property {Array<Availability>} availabilities
+ * @property {Array<Omit<Subject, 'status'>>} subjects
+ * @property {Array<Edge>} edges
+ *
  * @typedef {object} Config
  * @property {Array<Status>} statuses
  * @property {Array<Availability>} availabilities

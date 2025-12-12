@@ -101,7 +101,7 @@ describe('Graph rendering (Q, F2 -> TdC)', () => {
       // F2 -> TdC arrow should reflect F2's contribution
       const f2Arrow = drawer.shapes.arrows.find(a => a.id === 'F2-TdC');
       expect(f2Arrow).toBeDefined();
-      expect(f2Arrow.color).toBe(availabilityColor(arrowAvailability));
+      expect(f2Arrow?.color).toBe(availabilityColor(arrowAvailability));
     });
   });
 });
