@@ -5,27 +5,28 @@
   --bg-secondary: #161b22;
   --bg-tertiary: #21262d;
 
+  /* Node fill colors (status) - based on light blue #3b82f6 at different intensities */
+  --fill-color-1: #111827;            /* Neutral dark gray - pending */
+  --fill-color-2: #374151;            /* Neutral medium gray - in progress */
+  --fill-color-3: #2255d4;            /* Medium-deep blue - final exam pending */
+  --fill-color-4: #3b82f6;            /* 100% light blue - approved */
+  --fill-color-5: #60a5fa;
+
+  /* Node border colors (availability) - similar to fill due to Cytoscape library limitation */
+  --border-color-2: #323b48;          /* Gray - not available */
+  --border-color-3: #2050c8;          /* Deep blue - enroll available */
+  --border-color-4: #387dd9;          /* Light blue - final exam available */
+
   /* Accent colors */
-  --accent-blue: #3b82f6;
-  --accent-blue-light: #60a5fa;
-  --accent-blue-dark: #2563eb;
+  --accent-blue: var(--fill-color-4);
+  --accent-blue-light: var(--fill-color-5);
+  --accent-blue-dark: var(--fill-color-3);
 
   /* Button colors */
   --btn-secondary: #374151;
   --btn-secondary-hover: #4b5563;
   --btn-reset: #dc2626;
   --btn-reset-hover: #b91c1c;
-
-  /* Node fill colors (status) - based on light blue #3b82f6 at different intensities */
-  --fill-color-1: #111827;            /* Neutral dark gray - pending */
-  --fill-color-2: #374151;            /* Neutral medium gray - in progress */
-  --fill-color-3: #2255d4;            /* Medium-deep blue - final exam pending */
-  --fill-color-4: #3b82f6;            /* 100% light blue - approved */
-
-  /* Node border colors (availability) - similar to fill due to Cytoscape library limitation */
-  --border-color-2: #323b48;          /* Gray - not available */
-  --border-color-3: #2050c8;          /* Deep blue - enroll available */
-  --border-color-4: #387dd9;          /* Light blue - final exam available */
 
   /* Text colors */
   --text-primary: #f1f5f9;
@@ -199,7 +200,7 @@ header h1 {
 }
 
 .progress-bar-pending {
-  stroke: var(--state-final-pending);
+  stroke: var(--fill-color-3);
 }
 
 .progress-bar-approved {
@@ -225,7 +226,7 @@ header h1 {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--state-final-pending);
+  color: var(--fill-color-3);
   margin-top: -4px;
 }
 
@@ -294,43 +295,6 @@ header h1 {
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* State color classes for legend */
-.state-inactive {
-  background: var(--state-inactive);
-}
-
-.state-in-progress {
-  background: var(--state-in-progress);
-}
-
-.state-final-pending {
-  background: var(--state-final-pending);
-}
-
-.state-approved {
-  background: var(--state-approved);
-}
-
-.state-connector {
-  background: #64748b;
-  width: 30px;
-  height: 30px;
-  transform: rotate(45deg);
-  border-radius: 4px;
-  position: relative;
-}
-
-.state-connector::after {
-  content: 'Y';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-45deg);
-  color: white;
-  font-weight: bold;
-  font-size: 0.9rem;
 }
 
 /* Border color class for legend (dynamically styled) */
