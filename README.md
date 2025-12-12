@@ -22,9 +22,9 @@ Click any subject node to cycle through states:
 
 | State | Spanish | Visual Style |
 |-------|---------|--------------|
-| Inactive | Inactiva | Dark fill |
+| Pending | Pendiente | Dark fill |
 | In Progress | En curso | Gray fill |
-| Final Pending | Final pendiente | Deep blue fill |
+| Final Pending | Cursada | Deep blue fill |
 | Approved | Aprobada | Blue fill |
 
 ### Border Colors (Availability)
@@ -107,7 +107,7 @@ How to validate offline behavior:
 
 1. Start a local server from the repo root (see instructions above).
 2. Open `localhost` in Chrome/Edge DevTools.
-3. Open DevTools > Application > Service Workers and ensure `sw.js` is registered and the cache (`subjects-graph-cache-v1`) contains `index.html` and `data.json`.
+3. Open DevTools > Application > Service Workers and ensure `sw.js` is registered and the cache (`subjects-graph-cache-{version}`) contains `index.html` and `data.json`.
 4. In DevTools > Application > Service Workers, check "Offline" and refresh.
 5. Confirm the app still loads and you can interact with it (cycle statuses, export/import, etc.).
 
@@ -118,12 +118,20 @@ Notes: iOS Safari has limited Service Worker support and may not provide the ful
 ```
 subjects-graph/
 ├── docs/
-│   ├── index.html        # Main HTML
-│   ├── app.js            # Application logic
-│   ├── styles.css        # Styles
-│   ├── data.json         # Variants and curriculum data
-│   ├── cytoscape.min.js  # Graph library
-│   └── lucide.min.js     # Icon library
+│   ├── index.html           # Main HTML
+│   ├── app.js               # Application logic (UI, events)
+│   ├── graph.js             # Graph rendering logic
+│   ├── styles.css           # Styles
+│   ├── data.json            # Variants and curriculum data
+│   ├── lib/                 # Third-party libraries
+│   │   ├── cytoscape.min.js # Graph library
+│   │   └── lucide.min.js    # Icon library
+│   └── pwa/                 # Progressive Web App assets
+│       ├── manifest.webmanifest
+│       ├── sw.js            # Service worker
+│       ├── offline.html     # Offline fallback
+│       └── icons/           # App icons
+├── tests/                   # Unit tests (Vitest)
 ├── README.md
 └── LICENSE
 ```
@@ -139,14 +147,18 @@ Edit `docs/data.json`:
   "defaultVariant": "frba-k08",
   "variants": {
     "frba-k08": {
-      "name": "Ingeniería en Sistemas - UTN FRBA - Plan K08",
+      "name": "Ingeniería en Sistemas de Información - UTN FRBA - Plan K08",
+      "statuses": [...],
+      "availabilities": [...],
       "subjects": [...],
-      "links": [...]
+      "edges": [...]
     },
     "new-variant": {
       "name": "New Curriculum Name",
+      "statuses": [...],
+      "availabilities": [...],
       "subjects": [...],
-      "links": [...]
+      "edges": [...]
     }
   }
 }
@@ -156,29 +168,54 @@ Edit `docs/data.json`:
 
 ```json
 {
-  "id": "AM1",
-  "name": "Análisis Matemático I",
-  "prerequisites": [],
-  "position": { "x": 900, "y": 300 }
+  "id": "E",
+  "name": "Economía",
+  "position": { "x": 300, "y": 200 },
+  "prerequisites": [
+    {
+      "availabilityId": "ENROLL_AVAILABLE",
+      "dependencies": [
+        { "statusId": "FINAL_EXAM_PENDING", "subjects": ["AdS"] },
+        { "statusId": "APPROVED", "subjects": ["AyED", "SyO"] }
+      ]
+    },
+    {
+      "availabilityId": "FINAL_EXAM_AVAILABLE",
+      "dependencies": [
+        { "statusId": "APPROVED", "subjects": ["AdS"] }
+      ]
+    }
+  ]
 }
 ```
 
-### Connector Links
+Subjects with no prerequisites use an empty array:
+
+```json
+{
+  "id": "AM1",
+  "name": "Análisis Matemático I",
+  "position": { "x": 900, "y": 300 },
+  "prerequisites": [],
+}
+```
+
+### Edge Nodes (Connectors)
 
 ```json
 {
   "id": "link1",
-  "sources": ["AM1", "AGA"],
-  "destinations": ["AM2", "PyE"],
+  "dependencies": ["AM1", "AGA"],
+  "targets": ["AM2", "PyE"],
   "position": { "x": 900, "y": 200 }
 }
 ```
 
-Links can also chain to other links for complex routing:
+Edges can chain to other edges for complex routing:
 
 ```json
-{ "id": "link19", "sources": ["F2"], "destinations": ["link20"], ... },
-{ "id": "link20", "sources": ["link19"], "destinations": ["link21"], ... }
+{ "id": "link19", "dependencies": ["F2"], "targets": ["link20"], ... },
+{ "id": "link20", "dependencies": ["link19"], "targets": ["link21"], ... }
 ```
 
 ## Controls

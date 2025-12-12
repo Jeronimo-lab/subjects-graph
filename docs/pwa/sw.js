@@ -1,13 +1,13 @@
-const CACHE_NAME = 'subjects-graph-cache-v4';
+const CACHE_NAME = 'subjects-graph-cache-v5';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './graph.js',
-  './cytoscape.min.js',
-  './lucide.min.js',
-  './data.json',
+  '../',
+  '../index.html',
+  '../styles.css',
+  '../app.js',
+  '../graph.js',
+  '../lib/cytoscape.min.js',
+  '../lib/lucide.min.js',
+  '../data.json',
   './manifest.webmanifest',
   './icons/icon-192.svg',
   './icons/icon-512.svg',
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(async () => {
           // If fetch fails, try the cached navigation route (index.html) - allows SPA to work offline
-          const cachedIndex = await caches.match('./index.html');
+          const cachedIndex = await caches.match('../index.html');
           if (cachedIndex) return cachedIndex;
           // If index.html is not cached for some reason, fall back to offline.html fallback
           return caches.match('./offline.html');

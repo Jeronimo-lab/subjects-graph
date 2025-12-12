@@ -228,7 +228,7 @@ import { Graph } from './graph.js';
     if (!('serviceWorker' in navigator)) return;
     if (!isInstalled()) return; // Only register for installed PWA
     try {
-      const reg = await navigator.serviceWorker.register('./sw.js');
+      const reg = await navigator.serviceWorker.register('./pwa/sw.js');
       console.log('Service Worker registered (installed PWA):', reg);
     } catch (err) {
       console.error('Service Worker registration failed:', err);
