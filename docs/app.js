@@ -82,7 +82,7 @@
   async function init() {
     // Fetch data.json
     try {
-      const response = await fetch('data.json');
+      const response = await fetch('data.bak.json'); // TODO: Use new data.json when ready
       appData = await response.json();
     } catch (err) {
       console.error('Error loading data.json:', err);
