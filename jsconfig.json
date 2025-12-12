@@ -4,10 +4,10 @@
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
-    "target": "ES2023",
-    "module": "ES2020",
+    "target": "esnext",
+    "module": "nodenext",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["vitest/globals"]
   },
