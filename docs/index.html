@@ -84,32 +84,13 @@
 
     <!-- Load app -->
         <script>
-
             let deferredPrompt;
-            const installBtn = document.getElementById('install-button');
-
             window.addEventListener('beforeinstallprompt', (e) => {
                 // Prevent Chrome 67 and earlier from automatically showing the prompt
                 e.preventDefault();
                 deferredPrompt = e;
-                // Update UI to notify the user they can add to home screen
-                installBtn.style.display = 'inline-block';
-            });
-
-            installBtn && installBtn.addEventListener('click', async () => {
-                installBtn.style.display = 'none';
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const choice = await deferredPrompt.userChoice;
-                    deferredPrompt = null;
-                    if (choice.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
-                    } else {
-                        console.log('User dismissed the install prompt');
-                    }
-                }
             });
         </script>
-        <script src="app.js"></script>
+        <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -48,7 +48,7 @@
  * @method drawArrow
  */
 
-class Graph {
+export class Graph {
   /** @type {Config} */
   #config;
 

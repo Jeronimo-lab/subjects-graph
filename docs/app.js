@@ -1,45 +1,116 @@
 // Main Application
+import { Graph } from './graph.js';
+
 (function() {
   'use strict';
-
-  // Status configuration (loaded from variant data)
-  let statusConfig = [];       // Full status objects from data.json
-  let STATUS_ORDER = [];       // Status IDs in order
-  let STATUS_COLORS = {};      // Status ID -> fill color
-  let STATUS_BORDER_COLORS = {}; // Status ID -> border color
 
   // Variant storage key
   const VARIANT_STORAGE_KEY = 'selectedVariant';
 
   // State management
-  let cy; // Cytoscape instance
+  let cy = null; // Cytoscape instance
+  let graph = null; // Graph instance
   let appData = null; // Loaded from data.json
   let currentVariant = null;
-  let currentSubjects = [];
-  let currentLinks = [];
+  let config = null; // { statuses, availabilities }
 
   // Get storage key for current variant
   function getStorageKey() {
     return `graphStatus-${currentVariant}`;
   }
 
-  // Save subject statuses to localStorage (keyed by variant)
-  function saveData() {
+  // Load subject statuses from localStorage
+  function loadStatuses() {
+    const saved = localStorage.getItem(getStorageKey());
+    return saved ? JSON.parse(saved) : {};
+  }
+
+  // Save subject statuses to localStorage
+  function saveStatuses() {
     const statuses = {};
-    currentSubjects.forEach(s => {
-      const node = cy.$(`#${s.id}`);
-      const status = node ? node.data('status') : s.status || STATUS_ORDER[0];
-      if (status !== STATUS_ORDER[0]) {
-        statuses[s.id] = status; // Only save non-inactive statuses
+    const defaultStatus = config.statuses[0].id;
+    cy.nodes('[nodeType="subject"]').forEach(node => {
+      const status = node.data('status');
+      if (status !== defaultStatus) {
+        statuses[node.id()] = status;
       }
     });
     localStorage.setItem(getStorageKey(), JSON.stringify(statuses));
   }
 
-  // Load subject statuses from localStorage
-  function loadStatuses() {
-    const saved = localStorage.getItem(getStorageKey());
-    return saved ? JSON.parse(saved) : {};
+  // CytoscapeDrawer - implements drawer interface for Graph
+  class CytoscapeDrawer {
+    constructor() {
+      this.nodes = [];
+      this.edges = [];
+    }
+
+    drawCircle({ label, tooltip, position, fillColor, borderColor }) {
+      this.nodes.push({
+        data: {
+          id: label,
+          label,
+          name: tooltip,
+          nodeType: 'subject',
+          status: this._getStatusIdByColor(fillColor),
+          borderState: this._getAvailabilityIdByColor(borderColor),
+        },
+        position: { x: position.x, y: position.y },
+        locked: true,
+      });
+    }
+
+    drawDiamond({ id, position, borderColor }) {
+      this.nodes.push({
+        data: {
+          id,
+          nodeType: 'connector',
+          isInvisible: false,
+          borderState: this._getAvailabilityIdByColor(borderColor),
+        },
+        position: { x: position.x, y: position.y },
+        locked: true,
+      });
+    }
+
+    drawEdge({ id, position }) {
+      this.nodes.push({
+        data: {
+          id,
+          nodeType: 'connector',
+          isInvisible: true,
+          borderState: config.availabilities[0].id,
+        },
+        position: { x: position.x, y: position.y },
+        locked: true,
+      });
+    }
+
+    drawArrow({ id, from, to, color }) {
+      const toNode = this.nodes.find(n => n.data.id === to);
+      const toInvisible = toNode?.data.isInvisible ?? false;
+      this.edges.push({
+        data: {
+          id,
+          source: from,
+          target: to,
+          toInvisible,
+          edgeColor: this._getAvailabilityIdByColor(color),
+        },
+      });
+    }
+
+    _getStatusIdByColor(color) {
+      return config.statuses.find(s => s.color === color)?.id ?? config.statuses[0].id;
+    }
+
+    _getAvailabilityIdByColor(color) {
+      return config.availabilities.find(a => a.color === color)?.id ?? config.availabilities[0].id;
+    }
+
+    getElements() {
+      return { nodes: this.nodes, edges: this.edges };
+    }
   }
 
   // Generate legend from status configuration
@@ -52,7 +123,7 @@
     borderLegend.innerHTML = '';
 
     // Generate status legend items
-    statusConfig.forEach(status => {
+    config.statuses.forEach(status => {
       if (status.label) {
         const item = document.createElement('div');
         item.className = 'legend-item';
@@ -64,14 +135,14 @@
       }
     });
 
-    // Generate border legend items (only for statuses with borderLabel)
-    statusConfig.forEach(status => {
-      if (status.borderLabel) {
+    // Generate border legend items from availabilities
+    config.availabilities.forEach(avail => {
+      if (avail.label) {
         const item = document.createElement('div');
         item.className = 'legend-item';
         item.innerHTML = `
-          <div class="legend-color legend-border" style="border-color: ${status.borderColor}"></div>
-          <span>${status.borderLabel}</span>
+          <div class="legend-color legend-border" style="border-color: ${avail.color}"></div>
+          <span>${avail.label}</span>
         `;
         borderLegend.appendChild(item);
       }
@@ -82,7 +153,7 @@
   async function init() {
     // Fetch data.json
     try {
-      const response = await fetch('data.bak.json'); // TODO: Use new data.json when ready
+      const response = await fetch('data.json');
       appData = await response.json();
     } catch (err) {
       console.error('Error loading data.json:', err);
@@ -109,29 +180,33 @@
     // Set dropdown to current variant
     variantSelect.value = currentVariant;
 
-    // Load graph structure from variant data
+    // Load variant data
     const variantData = appData.variants[currentVariant];
-    currentSubjects = variantData.subjects.map(s => ({ ...s }));
-    currentLinks = variantData.links;
 
-    // Load status configuration from variant data
-    statusConfig = variantData.statuses;
-    STATUS_ORDER = statusConfig.map(s => s.id);
-    STATUS_COLORS = Object.fromEntries(statusConfig.map(s => [s.id, s.color]));
-    STATUS_BORDER_COLORS = Object.fromEntries(statusConfig.map(s => [s.id, s.borderColor]));
+    // Set up config
+    config = {
+      statuses: variantData.statuses,
+      availabilities: variantData.availabilities,
+    };
 
-    // Generate legend from status config
+    // Generate legend
     generateLegend();
 
-    // Apply saved statuses
+    // Load saved statuses from localStorage and merge with subjects
     const savedStatuses = loadStatuses();
-    currentSubjects.forEach(s => {
-      if (savedStatuses[s.id]) {
-        s.status = savedStatuses[s.id];
-      }
-    });
+    const defaultStatus = config.statuses[0].id;
+    const subjects = variantData.subjects.map(s => ({
+      ...s,
+      status: savedStatuses[s.id] || s.status || defaultStatus,
+    }));
 
-    initGraph();
+    // Create Graph and render
+    graph = new Graph(config, subjects, variantData.edges);
+    const drawer = new CytoscapeDrawer();
+    graph.render(drawer);
+
+    // Initialize Cytoscape with drawer's elements
+    initCytoscape(drawer.getElements());
     setupEventListeners();
     registerServiceWorkerIfInstalled();
   }
@@ -157,9 +232,9 @@
     }
   }
 
-  // Build dynamic stylesheet based on status configuration
+  // Build dynamic stylesheet based on config
   function buildStylesheet() {
-    const defaultBorderColor = STATUS_BORDER_COLORS[STATUS_ORDER[0]];
+    const defaultAvailColor = config.availabilities[0].color;
 
     const styles = [
       // Base node style (for subject nodes)
@@ -179,7 +254,7 @@
           'text-outline-width': 1,
           'border-width': 3,
           'border-opacity': 1,
-          'background-color': STATUS_COLORS[STATUS_ORDER[0]],
+          'background-color': config.statuses[0].color,
           'transition-property': 'background-color, border-color',
           'transition-duration': '0.3s'
         }
@@ -195,7 +270,7 @@
           'label': '',
           'background-opacity': 0,
           'border-width': 3,
-          'border-color': defaultBorderColor,
+          'border-color': defaultAvailColor,
           'transition-property': 'border-color',
           'transition-duration': '0.3s'
         }
@@ -217,8 +292,8 @@
         selector: 'edge',
         style: {
           'width': 3,
-          'line-color': defaultBorderColor,
-          'target-arrow-color': defaultBorderColor,
+          'line-color': defaultAvailColor,
+          'target-arrow-color': defaultAvailColor,
           'target-arrow-shape': 'vee',
           'curve-style': 'bezier',
           'arrow-scale': 1.5,
@@ -237,596 +312,63 @@
     ];
 
     // Generate status-specific fill color styles
-    statusConfig.forEach(status => {
+    config.statuses.forEach(status => {
       styles.push({
         selector: `node[status="${status.id}"]`,
         style: { 'background-color': status.color }
       });
     });
 
-    // Generate border color styles for each status (used as borderState)
-    statusConfig.forEach(status => {
+    // Generate border/edge color styles for each availability
+    config.availabilities.forEach(avail => {
       styles.push({
-        selector: `node[borderState="${status.id}"]`,
-        style: { 'border-color': status.borderColor }
+        selector: `node[borderState="${avail.id}"]`,
+        style: { 'border-color': avail.color }
+      });
+      styles.push({
+        selector: `edge[edgeColor="${avail.id}"]`,
+        style: { 'line-color': avail.color, 'target-arrow-color': avail.color }
       });
     });
 
     return styles;
   }
 
-  // Initialize Cytoscape graph
-  function initGraph() {
-    // Prepare subject nodes
-    const nodes = currentSubjects.map(subject => ({
-      data: {
-        id: subject.id,
-        label: subject.id,
-        name: subject.name,
-        nodeType: 'subject',
-        status: subject.status || STATUS_ORDER[0],
-        borderState: STATUS_ORDER[0],
-        position: subject.position
-      },
-      position: subject.position ? { x: subject.position.x, y: subject.position.y } : undefined,
-      locked: true  // Subject nodes are not draggable
-    }));
-
-    // Helper to check if an ID is a link (connector) ID
-    const linkIds = new Set(currentLinks.map(l => l.id));
-    const isLinkId = (id) => linkIds.has(id);
-
-    // Add static connector nodes from links array
-    const connectorNodes = currentLinks.map(link => {
-      // Invisible if: 1 source + 1 destination, OR connects to/from another link
-      const connectsToLink = link.destinations?.some(id => isLinkId(id));
-      const connectsFromLink = link.sources?.some(id => isLinkId(id));
-      const isInvisible = (link.sources?.length === 1 && link.destinations?.length === 1) ||
-                          connectsToLink || connectsFromLink;
-      return {
-        data: {
-          id: link.id,
-          label: 'Y',
-          nodeType: 'connector',
-          isInvisible: isInvisible,
-          borderState: STATUS_ORDER[0],
-          sources: link.sources || [],
-          destinations: link.destinations || []
-        },
-        position: link.position ? { x: link.position.x, y: link.position.y } : undefined,
-        locked: true
-      };
-    });
-
-    nodes.push(...connectorNodes);
-
-    // Build edges based on prerequisites
-    const edges = [];
-    const processedConnections = new Set(); // Track which connections we've made through connectors
-
-    // First, process all connections through connectors
-    currentLinks.forEach(link => {
-      if (link.sources && link.destinations) {
-        // Check if this connector should be invisible
-        const connectsToLink = link.destinations.some(id => isLinkId(id));
-        const connectsFromLink = link.sources.some(id => isLinkId(id));
-        const isInvisible = (link.sources.length === 1 && link.destinations.length === 1) ||
-                            connectsToLink || connectsFromLink;
-
-        if (isInvisible) {
-          // For invisible connectors: draw source -> connector and connector -> destination
-          // But the connector node itself won't be visible, creating the effect of - () ->
-          link.sources.forEach(sourceId => {
-            const sourceIsLink = isLinkId(sourceId);
-            edges.push({
-              data: {
-                id: `${sourceId}-${link.id}`,
-                source: sourceId,
-                target: link.id,
-                toInvisible: true,  // Mark edge going to invisible connector
-                fromInvisible: sourceIsLink  // Mark if coming from another invisible connector
-              }
-            });
-          });
-
-          link.destinations.forEach(destId => {
-            const destIsLink = isLinkId(destId);
-            edges.push({
-              data: {
-                id: `${link.id}-${destId}`,
-                source: link.id,
-                target: destId,
-                toInvisible: destIsLink  // Mark if going to another invisible connector
-              }
-            });
-          });
-
-          // Mark connections as processed
-          link.sources.forEach(sourceId => {
-            link.destinations.forEach(destId => {
-              processedConnections.add(`${sourceId}-${destId}`);
-            });
-          });
-        } else {
-          // For visible connectors: draw both source -> connector and connector -> destination
-          // Connect each source to the connector
-          link.sources.forEach(sourceId => {
-            edges.push({
-              data: {
-                id: `${sourceId}-${link.id}`,
-                source: sourceId,
-                target: link.id
-              }
-            });
-
-            // Mark these connections as processed for each destination
-            link.destinations.forEach(destId => {
-              processedConnections.add(`${sourceId}-${destId}`);
-            });
-          });
-
-          // Connect the connector to each destination
-          link.destinations.forEach(destId => {
-            edges.push({
-              data: {
-                id: `${link.id}-${destId}`,
-                source: link.id,
-                target: destId
-              }
-            });
-          });
-        }
-      }
-    });
-
-    // Helper: get ultimate subject destinations from a link (follows link chains)
-    const getUltimateDestinations = (linkId, visited = new Set()) => {
-      if (visited.has(linkId)) return [];
-      visited.add(linkId);
-
-      const linkData = currentLinks.find(l => l.id === linkId);
-      if (!linkData || !linkData.destinations) return [];
-
-      const subjectDests = [];
-      linkData.destinations.forEach(destId => {
-        if (isLinkId(destId)) {
-          subjectDests.push(...getUltimateDestinations(destId, visited));
-        } else {
-          subjectDests.push(destId);
-        }
-      });
-      return subjectDests;
-    };
-
-    // Helper: get ultimate subject sources from a link (follows link chains)
-    const getUltimateSources = (linkId, visited = new Set()) => {
-      if (visited.has(linkId)) return [];
-      visited.add(linkId);
-
-      const linkData = currentLinks.find(l => l.id === linkId);
-      if (!linkData || !linkData.sources) return [];
-
-      const subjectSources = [];
-      linkData.sources.forEach(sourceId => {
-        if (isLinkId(sourceId)) {
-          subjectSources.push(...getUltimateSources(sourceId, visited));
-        } else {
-          subjectSources.push(sourceId);
-        }
-      });
-      return subjectSources;
-    };
-
-    // Mark all ultimate source-destination pairs through link chains as processed
-    currentLinks.forEach(link => {
-      const ultimateSources = getUltimateSources(link.id);
-      const ultimateDests = getUltimateDestinations(link.id);
-      ultimateSources.forEach(sourceId => {
-        ultimateDests.forEach(destId => {
-          processedConnections.add(`${sourceId}-${destId}`);
-        });
-      });
-    });
-
-    // Helper: get all prerequisite IDs for a subject (flattened from all status groups)
-    const getAllPrereqIds = (subjectId) => {
-      const subject = currentSubjects.find(s => s.id === subjectId);
-      if (!subject || !subject.prerequisites) return [];
-      return Object.values(subject.prerequisites).flat();
-    };
-
-    // Helper: check if targetId is transitively reachable from sourceId
-    const isTransitivelyReachable = (sourceId, targetId, visited = new Set()) => {
-      if (visited.has(sourceId)) return false;
-      visited.add(sourceId);
-
-      const prereqs = getAllPrereqIds(sourceId);
-      for (const prereqId of prereqs) {
-        if (prereqId === targetId) return true;
-        if (isTransitivelyReachable(prereqId, targetId, visited)) return true;
-      }
-      return false;
-    };
-
-    // Then, add direct connections for prerequisites not going through connectors
-    // Skip transitive edges (if A→B→C exists, don't draw A→C)
-    currentSubjects.forEach(subject => {
-      const allPrereqIds = getAllPrereqIds(subject.id);
-
-      // Filter out transitive prerequisites
-      // A prereq is transitive if it's reachable through another prereq
-      const directPrereqs = allPrereqIds.filter(prereqId => {
-        // Check if any OTHER prereq has this prereqId in its transitive closure
-        return !allPrereqIds.some(otherPrereqId =>
-          otherPrereqId !== prereqId && isTransitivelyReachable(otherPrereqId, prereqId)
-        );
-      });
-
-      directPrereqs.forEach(prereqId => {
-        const connectionKey = `${prereqId}-${subject.id}`;
-
-        // Only add direct edge if not already connected through a connector
-        if (!processedConnections.has(connectionKey)) {
-          edges.push({
-            data: {
-              id: connectionKey,
-              source: prereqId,
-              target: subject.id
-            }
-          });
-        }
-      });
-    });
-
-    // Initialize Cytoscape
+  // Initialize Cytoscape with elements from drawer
+  function initCytoscape(elements) {
     cy = cytoscape({
       container: document.getElementById('cy'),
-
-      elements: {
-        nodes: nodes,
-        edges: edges
-      },
-
+      elements: elements,
       style: buildStylesheet(),
-
       layout: {
         name: 'preset',
-        positions: function(node) {
-          const data = node.data();
-          if (data.position) {
-            return { x: data.position.x, y: data.position.y };
-          }
-          // For connector nodes, position them automatically
-          return undefined;
-        },
         fit: true,
         padding: 50
       },
-
       minZoom: 0.3,
       maxZoom: 3,
       wheelSensitivity: 0.2
     });
 
-    updateDependentStyles();
+    // Update progress on initial load
+    updateProgress();
 
     // Click handler to cycle through statuses
     cy.on('tap', 'node[nodeType="subject"]', function(evt) {
       const node = evt.target;
       const currentStatus = node.data('status');
-      const currentIndex = STATUS_ORDER.indexOf(currentStatus);
-      const nextIndex = (currentIndex + 1) % STATUS_ORDER.length;
-      const nextStatus = STATUS_ORDER[nextIndex];
+      const currentIndex = config.statuses.findIndex(s => s.id === currentStatus);
+      const nextIndex = (currentIndex + 1) % config.statuses.length;
+      const nextStatus = config.statuses[nextIndex].id;
 
+      // Update status and re-render graph
       node.data('status', nextStatus);
-      updateDependentStyles();
-      saveData();
+      reRenderGraph();
+      saveStatuses();
     });
-
-    // Update borders and edge colors based on dependency statuses
-    function updateDependentStyles() {
-      // Helper: get status index in order (higher = more complete)
-      const getStatusIndex = (status) => STATUS_ORDER.indexOf(status);
-      const lastStatusId = STATUS_ORDER[STATUS_ORDER.length - 1];
-      const defaultStatusId = STATUS_ORDER[0];
-
-      // Helper: check if status meets minimum requirement
-      const statusMeetsMinimum = (status, minStatus) =>
-        getStatusIndex(status) >= getStatusIndex(minStatus);
-
-      // Helper: get status of a node by id
-      const getNodeStatus = (nodeId) => {
-        const node = cy.getElementById(nodeId);
-        return node.data('status');
-      };
-
-      // Helper: find highest status level where all prerequisites are satisfied
-      // Returns the status ID to use for borderState, or defaultStatusId if none met
-      const getHighestSatisfiedStatus = (subjectData) => {
-        const prereqs = subjectData.prerequisites || {};
-        const hasPrereqs = Object.keys(prereqs).length > 0;
-        if (!hasPrereqs) return lastStatusId; // No prerequisites = fully satisfied
-
-        // First check: do all subjects meet their MINIMUM required status?
-        let allMinimumsMet = true;
-        for (const [requiredStatus, subjectIds] of Object.entries(prereqs)) {
-          const groupMet = subjectIds.every(id =>
-            statusMeetsMinimum(getNodeStatus(id), requiredStatus)
-          );
-          if (!groupMet) {
-            allMinimumsMet = false;
-            break;
-          }
-        }
-
-        if (!allMinimumsMet) return defaultStatusId; // Can't even start
-
-        // All minimums met - now find the highest level where ALL prereqs are satisfied
-        // (i.e., find the minimum status among all prereq subjects)
-        let minStatusIndex = STATUS_ORDER.length - 1;
-        for (const subjectIds of Object.values(prereqs)) {
-          for (const id of subjectIds) {
-            const statusIndex = getStatusIndex(getNodeStatus(id));
-            minStatusIndex = Math.min(minStatusIndex, statusIndex);
-          }
-        }
-
-        return STATUS_ORDER[minStatusIndex];
-      };
-
-      // Update subject node borders based on their prerequisites
-      cy.nodes('[nodeType="subject"]').forEach(node => {
-        const subjectData = currentSubjects.find(s => s.id === node.id());
-        const satisfiedStatus = getHighestSatisfiedStatus(subjectData);
-        node.data('borderState', satisfiedStatus || defaultStatusId);
-      });
-
-      // Helper: get ultimate subject sources from a connector (follows link chains)
-      const getUltimateSubjectSources = (linkId, visited = new Set()) => {
-        if (visited.has(linkId)) return []; // Avoid cycles
-        visited.add(linkId);
-
-        const linkData = currentLinks.find(l => l.id === linkId);
-        if (!linkData || !linkData.sources) return [];
-
-        const subjectSources = [];
-        linkData.sources.forEach(sourceId => {
-          const isLink = currentLinks.some(l => l.id === sourceId);
-          if (isLink) {
-            subjectSources.push(...getUltimateSubjectSources(sourceId, visited));
-          } else {
-            subjectSources.push(sourceId);
-          }
-        });
-        return subjectSources;
-      };
-
-      // Helper: get highest satisfied status for a set of source subjects
-      const getSourcesSatisfiedStatus = (sourceIds) => {
-        if (sourceIds.length === 0) return null;
-
-        // Find the minimum satisfied status across all sources
-        let minSatisfiedIndex = STATUS_ORDER.length - 1;
-
-        for (const id of sourceIds) {
-          const subjectData = currentSubjects.find(s => s.id === id);
-          const sourceStatus = getNodeStatus(id);
-          const prereqSatisfied = getHighestSatisfiedStatus(subjectData);
-
-          // The source's effective status is the minimum of its own status and its prereq satisfaction
-          const sourceIndex = getStatusIndex(sourceStatus);
-          const prereqIndex = prereqSatisfied ? getStatusIndex(prereqSatisfied) : -1;
-          const effectiveIndex = Math.min(sourceIndex, prereqIndex);
-
-          minSatisfiedIndex = Math.min(minSatisfiedIndex, effectiveIndex);
-        }
-
-        return minSatisfiedIndex >= 0 ? STATUS_ORDER[minSatisfiedIndex] : null;
-      };
-
-
-      // Helper: get ultimate target subject (follows connector chains)
-      const getUltimateTarget = (nodeId) => {
-        const linkData = currentLinks.find(l => l.id === nodeId);
-        if (!linkData) return nodeId;
-        if (linkData.destinations && linkData.destinations.length > 0) {
-          return getUltimateTarget(linkData.destinations[0]);
-        }
-        return nodeId;
-      };
-
-      // Helper: get ultimate source subjects (follows connector chains backwards)
-      const getUltimateSourceSubjects = (nodeId) => {
-        const linkData = currentLinks.find(l => l.id === nodeId);
-        if (!linkData) return [nodeId]; // It's a subject
-        const subjects = [];
-        for (const srcId of (linkData.sources || [])) {
-          subjects.push(...getUltimateSourceSubjects(srcId));
-        }
-        return subjects;
-      };
-
-      // Helper: get required status for a source in target's prerequisites
-      const getRequiredStatus = (sourceId, targetId) => {
-        const targetData = currentSubjects.find(s => s.id === targetId);
-        if (!targetData || !targetData.prerequisites) return null;
-
-        for (const [requiredStatus, subjectIds] of Object.entries(targetData.prerequisites)) {
-          if (subjectIds.includes(sourceId)) return requiredStatus;
-        }
-        return null;
-      };
-
-      // Helper: get full transitive subtree for a subject (subject + all prereqs recursively)
-      const getSubtree = (subjectId, visited = new Set()) => {
-        if (visited.has(subjectId)) return [];
-        visited.add(subjectId);
-
-        const result = [subjectId];
-        const subjectData = currentSubjects.find(s => s.id === subjectId);
-        if (!subjectData || !subjectData.prerequisites) return result;
-
-        // Add all prerequisites recursively
-        for (const prereqIds of Object.values(subjectData.prerequisites)) {
-          for (const prereqId of prereqIds) {
-            result.push(...getSubtree(prereqId, visited));
-          }
-        }
-        return result;
-      };
-
-      // Helper: check if source's subtree satisfies target's requirements
-      // Only checks subjects from subtree that are LISTED in target's prerequisites
-      const getEffectiveSourceStatus = (sourceId, targetId) => {
-        const targetData = currentSubjects.find(s => s.id === targetId);
-        if (!targetData) return defaultStatusId;
-
-        const targetPrereqs = targetData.prerequisites || {};
-        const subtree = new Set(getSubtree(sourceId));
-
-        // For each subject in subtree that's listed in target's prereqs, check if met
-        let minStatusIndex = STATUS_ORDER.length - 1;
-
-        for (const [requiredStatus, subjectIds] of Object.entries(targetPrereqs)) {
-          for (const subjId of subjectIds) {
-            if (subtree.has(subjId)) {
-              // This subject is in our subtree AND listed in target's prereqs
-              const subjStatus = getNodeStatus(subjId);
-              if (!statusMeetsMinimum(subjStatus, requiredStatus)) {
-                return defaultStatusId; // Requirement not met
-              }
-              // Track minimum status
-              const subjIndex = getStatusIndex(subjStatus);
-              minStatusIndex = Math.min(minStatusIndex, subjIndex);
-            }
-          }
-        }
-
-        return STATUS_ORDER[minStatusIndex] || defaultStatusId;
-      };
-
-      // Helper: get ultimate destinations for a connector
-      const getUltimateDests = (linkId, visited = new Set()) => {
-        if (visited.has(linkId)) return [];
-        visited.add(linkId);
-        const ld = currentLinks.find(l => l.id === linkId);
-        if (!ld || !ld.destinations) return [];
-        const dests = [];
-        for (const destId of ld.destinations) {
-          const isLink = currentLinks.some(l => l.id === destId);
-          dests.push(...(isLink ? getUltimateDests(destId, visited) : [destId]));
-        }
-        return dests;
-      };
-
-      // Update connector node borders - for each destination, evaluate against each source, use lowest
-      cy.nodes('[nodeType="connector"]').forEach(node => {
-        const ultimateSources = getUltimateSubjectSources(node.id());
-        if (ultimateSources.length === 0) return;
-
-        const ultimateDests = getUltimateDests(node.id());
-        if (ultimateDests.length === 0) return;
-
-        // Evaluate each source against each destination, collect all results
-        let minIndex = STATUS_ORDER.length - 1;
-        let anyFailed = false;
-
-        for (const destId of ultimateDests) {
-          for (const srcId of ultimateSources) {
-            const status = getEffectiveSourceStatus(srcId, destId);
-            if (status === defaultStatusId) {
-              anyFailed = true;
-            } else {
-              minIndex = Math.min(minIndex, getStatusIndex(status));
-            }
-          }
-        }
-
-        node.data('borderState', anyFailed ? defaultStatusId : (STATUS_ORDER[minIndex] || defaultStatusId));
-      });
-
-      // Update edge colors based on source's effective status (including its subtree)
-      cy.edges().forEach(edge => {
-        const sourceNode = edge.source();
-        const targetNode = edge.target();
-
-        // Find ultimate target and sources
-        const ultimateTargetId = getUltimateTarget(targetNode.id());
-        const ultimateSourceIds = getUltimateSourceSubjects(sourceNode.id());
-
-        // Get effective status for each source (considering their subtrees)
-        let minEffectiveIndex = STATUS_ORDER.length - 1;
-        let anyFailed = false;
-
-        for (const srcId of ultimateSourceIds) {
-          const effectiveStatus = getEffectiveSourceStatus(srcId, ultimateTargetId);
-
-          if (effectiveStatus === defaultStatusId) {
-            anyFailed = true;
-            break;
-          }
-
-          const effectiveIndex = getStatusIndex(effectiveStatus);
-          minEffectiveIndex = Math.min(minEffectiveIndex, effectiveIndex);
-        }
-
-        if (anyFailed) {
-          const edgeColor = STATUS_BORDER_COLORS[defaultStatusId];
-          edge.style({ 'line-color': edgeColor, 'target-arrow-color': edgeColor });
-          return;
-        }
-
-        // All sources meet requirements with their subtrees → show effective status
-        const effectiveStatus = STATUS_ORDER[minEffectiveIndex] || defaultStatusId;
-        const edgeColor = STATUS_BORDER_COLORS[effectiveStatus] || STATUS_BORDER_COLORS[defaultStatusId];
-        edge.style({ 'line-color': edgeColor, 'target-arrow-color': edgeColor });
-      });
-
-      // Update progress circle
-      updateProgress();
-    }
-
-    // Update progress percentages
-    function updateProgress() {
-      const totalSubjects = currentSubjects.length;
-      let approvedCount = 0;
-      let pendingCount = 0;
-
-      // Progress thresholds based on position in status array
-      // Approved = last status, Pending = second-to-last and above
-      const approvedThreshold = STATUS_ORDER.length - 1;
-      const pendingThreshold = STATUS_ORDER.length - 2;
-
-      cy.nodes('[nodeType="subject"]').forEach(node => {
-        const status = node.data('status');
-        const statusIndex = STATUS_ORDER.indexOf(status);
-        if (statusIndex >= approvedThreshold) approvedCount++;
-        if (statusIndex >= pendingThreshold) pendingCount++;
-      });
-
-      const approvedPercent = Math.round((approvedCount / totalSubjects) * 100);
-      const pendingPercent = Math.round((pendingCount / totalSubjects) * 100);
-
-      // Update text
-      document.getElementById('progress-percentage').textContent = `${approvedPercent}%`;
-      document.getElementById('progress-pending-text').textContent = `${pendingPercent}%`;
-
-      // Update circles (circumference = 2 * PI * 45 ≈ 283)
-      const circumference = 283;
-      const approvedOffset = circumference - (circumference * approvedPercent / 100);
-      const pendingOffset = circumference - (circumference * pendingPercent / 100);
-
-      document.getElementById('progress-approved').style.strokeDashoffset = approvedOffset;
-      document.getElementById('progress-pending').style.strokeDashoffset = pendingOffset;
-    }
-
-    // Initial update
-    updateDependentStyles();
 
     // Cursor styles and tooltip
     const container = document.getElementById('cy');
-
-    // Create tooltip element
     const tooltip = document.createElement('div');
     tooltip.className = 'cy-tooltip';
     container.appendChild(tooltip);
@@ -849,19 +391,86 @@
       tooltip.style.display = 'none';
     });
 
-    // Handle appinstalled event and update UX accordingly
+    // Handle appinstalled event
     window.addEventListener('appinstalled', () => {
       const installBtn = document.getElementById('install-button');
       if (installBtn) installBtn.style.display = 'none';
       try {
         localStorage.setItem('pwaInstalled', 'true');
-      } catch (err) {
-        // ignore storage errors
-      }
-      // Register SW on installed app
+      } catch (err) {}
       registerServiceWorkerIfInstalled();
-      console.log('App installed (appinstalled event)');
     });
+  }
+
+  // Re-render graph after status change
+  function reRenderGraph() {
+    // Collect current statuses from cytoscape
+    const statuses = {};
+    cy.nodes('[nodeType="subject"]').forEach(node => {
+      statuses[node.id()] = node.data('status');
+    });
+
+    // Get variant data and merge with current statuses
+    const variantData = appData.variants[currentVariant];
+    const defaultStatus = config.statuses[0].id;
+    const subjects = variantData.subjects.map(s => ({
+      ...s,
+      status: statuses[s.id] || s.status || defaultStatus,
+    }));
+
+    // Re-create graph and render
+    graph = new Graph(config, subjects, variantData.edges);
+    const drawer = new CytoscapeDrawer();
+    graph.render(drawer);
+
+    // Update cytoscape node/edge data
+    const elements = drawer.getElements();
+    
+    // Update nodes
+    elements.nodes.forEach(newNode => {
+      const cyNode = cy.getElementById(newNode.data.id);
+      if (cyNode.length) {
+        cyNode.data('status', newNode.data.status);
+        cyNode.data('borderState', newNode.data.borderState);
+      }
+    });
+
+    // Update edges
+    elements.edges.forEach(newEdge => {
+      const cyEdge = cy.getElementById(newEdge.data.id);
+      if (cyEdge.length) {
+        cyEdge.data('edgeColor', newEdge.data.edgeColor);
+      }
+    });
+
+    updateProgress();
+  }
+
+  // Update progress percentages
+  function updateProgress() {
+    const totalSubjects = cy.nodes('[nodeType="subject"]').length;
+    let approvedCount = 0;
+    let pendingCount = 0;
+
+    const approvedIndex = config.statuses.length - 1;
+    const pendingIndex = config.statuses.length - 2;
+
+    cy.nodes('[nodeType="subject"]').forEach(node => {
+      const status = node.data('status');
+      const statusIndex = config.statuses.findIndex(s => s.id === status);
+      if (statusIndex >= approvedIndex) approvedCount++;
+      if (statusIndex >= pendingIndex) pendingCount++;
+    });
+
+    const approvedPercent = Math.round((approvedCount / totalSubjects) * 100);
+    const pendingPercent = Math.round((pendingCount / totalSubjects) * 100);
+
+    document.getElementById('progress-percentage').textContent = `${approvedPercent}%`;
+    document.getElementById('progress-pending-text').textContent = `${pendingPercent}%`;
+
+    const circumference = 283;
+    document.getElementById('progress-approved').style.strokeDashoffset = circumference - (circumference * approvedPercent / 100);
+    document.getElementById('progress-pending').style.strokeDashoffset = circumference - (circumference * pendingPercent / 100);
   }
 
   // Setup event listeners
