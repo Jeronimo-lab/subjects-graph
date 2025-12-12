@@ -27,3 +27,4 @@ temp/
 # Build artifacts (if ever added)
 dist/
 build/
+node_modules/
