@@ -14,6 +14,14 @@ import { Graph } from './graph.js';
   let currentVariant = null;
   let config = null; // { statuses, availabilities }
 
+  // Color lookup from variant's colors property
+  let colors = null;
+
+  // Resolve color variable name to hex value
+  function resolveCssColor(varName) {
+    return colors?.[varName] ?? '#000000';
+  }
+
   // Get storage key for current variant
   function getStorageKey() {
     return `graphStatus-${currentVariant}`;
@@ -185,11 +193,12 @@ import { Graph } from './graph.js';
 
     // Load variant data
     const variantData = appData.variants[currentVariant];
+    colors = appData.colors;
 
-    // Set up config
+    // Set up config with resolved CSS colors
     config = {
-      statuses: variantData.statuses,
-      availabilities: variantData.availabilities,
+      statuses: variantData.statuses.map(s => ({ ...s, color: resolveCssColor(s.color) })),
+      availabilities: variantData.availabilities.map(a => ({ ...a, color: resolveCssColor(a.color) })),
     };
 
     // Generate legend

@@ -1,5 +1,14 @@
 {
   "defaultVariant": "frba-k08",
+  "colors": {
+    "--fill-color-1": "#111827",
+    "--fill-color-2": "#374151",
+    "--fill-color-3": "#2255d4",
+    "--fill-color-4": "#3b82f6",
+    "--border-color-2": "#323b48",
+    "--border-color-3": "#2050c8",
+    "--border-color-4": "#387dd9"
+  },
   "variants": {
     "frba-k08": {
       "name": "Ingeniería en Sistemas de Información - UTN FRBA - Plan K08",
@@ -7,39 +16,39 @@
         {
           "id": "PENDING",
           "name": "Pendiente",
-          "color": "#111827"
+          "color": "--fill-color-1"
         },
         {
           "id": "IN_PROGRESS",
           "name": "En curso",
-          "color": "#374151"
+          "color": "--fill-color-2"
         },
         {
           "id": "FINAL_EXAM_PENDING",
           "name": "Cursada",
-          "color": "#2255d4"
+          "color": "--fill-color-3"
         },
         {
           "id": "APPROVED",
           "name": "Aprobada",
-          "color": "#3b82f6"
+          "color": "--fill-color-4"
         }
       ],
       "availabilities": [
         {
           "id": "NOT_AVAILABLE",
           "name": "No disponible",
-          "color": "#323b48"
+          "color": "--border-color-2"
         },
         {
           "id": "ENROLL_AVAILABLE",
           "name": "Disponible para cursar",
-          "color": "#2050c8"
+          "color": "--border-color-3"
         },
         {
           "id": "FINAL_EXAM_AVAILABLE",
           "name": "Disponible para aprobar",
-          "color": "#387dd9"
+          "color": "--border-color-4"
         }
       ],
       "subjects": [

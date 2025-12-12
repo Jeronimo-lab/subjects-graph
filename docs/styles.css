@@ -16,11 +16,16 @@
   --btn-reset: #dc2626;
   --btn-reset-hover: #b91c1c;
 
-  /* State colors - based on light blue #3b82f6 at different intensities */
-  --state-inactive: #111827;          /* Neutral dark gray */
-  --state-in-progress: #374151;       /* Neutral medium gray */
-  --state-final-pending: #2255d4;     /* Medium-deep blue */
-  --state-approved: #3b82f6;          /* 100% light blue */
+  /* Node fill colors (status) - based on light blue #3b82f6 at different intensities */
+  --fill-color-1: #111827;            /* Neutral dark gray - pending */
+  --fill-color-2: #374151;            /* Neutral medium gray - in progress */
+  --fill-color-3: #2255d4;            /* Medium-deep blue - final exam pending */
+  --fill-color-4: #3b82f6;            /* 100% light blue - approved */
+
+  /* Node border colors (availability) - similar to fill due to Cytoscape library limitation */
+  --border-color-2: #323b48;          /* Gray - not available */
+  --border-color-3: #2050c8;          /* Deep blue - enroll available */
+  --border-color-4: #387dd9;          /* Light blue - final exam available */
 
   /* Text colors */
   --text-primary: #f1f5f9;
