@@ -38,15 +38,27 @@
  */
 
 class Graph {
+  /** @type {Config} */
+  #config;
+
   /** @type {Map<string, SubjectNode>} */
   #subjects;
 
   /** @type {Map<string, EdgeNode>} */
   #edges;
 
-  constructor() {
+  /**
+   * @param {Config} config
+   * @param {Array<Subject>} subjects
+   * @param {Array<Edge>} edges
+   */
+  constructor(config, subjects, edges) {
+    this.#config = config;
     this.#subjects = new Map();
     this.#edges = new Map();
+    subjects.forEach(subject => this.#addSubject(subject));
+    edges.forEach(edge => this.#addEdge(edge));
+    this.#calculateDependencies();
   }
 
   get #nodes() {
@@ -56,31 +68,31 @@ class Graph {
   /**
    * Creates and adds a subject node to the graph.
    * @param {Subject} subject
-   * @return {SubjectNode}
    */
-  addSubject(subject) {
-    if (!this.#subjects.has(subject.id)) {
-      this.#subjects.set(subject.id, new SubjectNode(subject));
+  #addSubject(subject) {
+    if (this.#subjects.has(subject.id)) {
+      log.warn(`Subject with ID ${subject.id} already exists in the graph.`);
+      return;
     }
-    return this.#subjects.get(subject.id);
+    this.#subjects.set(subject.id, new SubjectNode(this.#config, subject));
   }
 
   /**
    * Creates and adds an edge node.
    * @param {Edge} edge
-   * @return {EdgeNode}
    */
-  addEdge(edge) {
-    if (!this.#edges.has(edge.id)) {
-      this.#edges.set(edge.id, new EdgeNode(edge));
+  #addEdge(edge) {
+    if (this.#edges.has(edge.id)) {
+      log.warn(`Edge with ID ${edge.id} already exists in the graph.`);
+      return;
     }
-    return this.#edges.get(edge.id);
+    this.#edges.set(edge.id, new EdgeNode(this.#config, edge));
   }
 
   /**
    * Calculates all dependencies in the graph based on subjects and edges.
    */
-  calculateDependencies() {
+  #calculateDependencies() {
     for (const node of this.#nodes) {
       node.calculateDependencies(this);
     }
@@ -109,14 +121,26 @@ class Graph {
  * @abstract
  */
 class AbstractNode {
+  /** @type {Config} */
+  #config;
+
   /** @type {Set<Link>} */
   #dependencies;
 
-  constructor() {
+  constructor(config) {
     if (new.target === AbstractNode) {
       throw new TypeError('Cannot instantiate AbstractNode');
     }
+    this.#config = config;
     this.#dependencies = new Set();
+  }
+
+  /**
+   * @param {AbstractNode} node
+   * @protected
+   */
+  _addDependency(node) {
+    this.#dependencies.add(new Link(node, this));
   }
 
   /**
@@ -152,27 +176,26 @@ class AbstractNode {
    * @param {StatusId} statusId
    * @returns {boolean}
    */
-  hasDependency(subjectId, statusId) {
+  _hasDependency(subjectId, statusId) {
     return Array.from(this.#dependencies)
-      .some(link => link.from.hasDependency(subjectId, statusId));
-  }
-
-  /**
-   * @param {AbstractNode} node
-   * @protected
-   */
-  _addDependency(node) {
-    this.#dependencies.add(new Link(node, this));
+      .some(link => link.from._hasDependency(subjectId, statusId));
   }
 }
 
 class SubjectNode extends AbstractNode {
+  /** @type {Config} */
+  #config;
+
   /** @type {Subject} */
   #data;
 
-  /** @param {Subject} data */
-  constructor(data) {
-    super();
+  /**
+   * @param {Config} config
+   * @param {Subject} data
+   */
+  constructor(config, data) {
+    super(config);
+    this.#config = config;
     this.#data = data;
   }
 
@@ -205,7 +228,7 @@ class SubjectNode extends AbstractNode {
     }
 
     return prerequisite.dependencies.every(d =>
-      d.subjects.every(subjectId => this.hasDependency(subjectId, d.statusId))
+      d.subjects.every(subjectId => this._hasDependency(subjectId, d.statusId))
     );
   }
 
@@ -214,15 +237,18 @@ class SubjectNode extends AbstractNode {
    * @param {StatusId} statusId
    * @returns {boolean}
    */
-  hasDependency(subjectId, statusId) {
+  _hasDependency(subjectId, statusId) {
     if (this.#data.id === subjectId) {
       return this.#data.status === statusId;
     }
-    return super.hasDependency(subjectId, statusId);
+    return super._hasDependency(subjectId, statusId);
   }
 }
 
 class EdgeNode extends AbstractNode {
+  /** @type {Config} */
+  #config;
+
   /** @type {Edge} */
   #data;
 
@@ -230,10 +256,12 @@ class EdgeNode extends AbstractNode {
   #targets;
 
   /**
+   * @param {Config} config
    * @param {Edge} data
    */
-  constructor(data) {
-    super();
+  constructor(config, data) {
+    super(config);
+    this.#config = config;
     this.#data = data;
     this.#targets = new Set();
   }
@@ -262,6 +290,9 @@ class EdgeNode extends AbstractNode {
 }
 
 class Link {
+  /** @type {Config} */
+  #config;
+
   /** @type {AbstractNode} */
   from;
 
@@ -271,10 +302,12 @@ class Link {
   /**
    * Creates a link between two nodes.
    * The drawn arrow points from 'from' dependency to 'to' target.
+   * @param {Config} config
    * @param {AbstractNode} from
    * @param {AbstractNode} to
    */
-  constructor(from, to) {
+  constructor(config, from, to) {
+    this.#config = config;
     this.from = from;
     this.#to = to;
   }
