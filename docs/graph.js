@@ -38,15 +38,19 @@
  */
 
 class Graph {
+  /** @type {Map<string, SubjectNode>} */
+  #subjects;
+
+  /** @type {Map<string, EdgeNode>} */
+  #edges;
+
   constructor() {
-    /** @type {Map<string, SubjectNode>} */
-    this.subjects = new Map();
-    /** @type {Map<string, EdgeNode>} */
-    this.edges = new Map();
+    this.#subjects = new Map();
+    this.#edges = new Map();
   }
 
-  get nodes() {
-    return [...this.subjects.values(), ...this.edges.values()];
+  get #nodes() {
+    return [...this.#subjects.values(), ...this.#edges.values()];
   }
 
   /**
@@ -55,10 +59,10 @@ class Graph {
    * @return {SubjectNode}
    */
   addSubject(subject) {
-    if (!this.subjects.has(subject.id)) {
-      this.subjects.set(subject.id, new SubjectNode(subject));
+    if (!this.#subjects.has(subject.id)) {
+      this.#subjects.set(subject.id, new SubjectNode(subject));
     }
-    return this.subjects.get(subject.id);
+    return this.#subjects.get(subject.id);
   }
 
   /**
@@ -67,20 +71,20 @@ class Graph {
    * @return {EdgeNode}
    */
   addEdge(edge) {
-    if (!this.edges.has(edge.id)) {
-      this.edges.set(edge.id, new EdgeNode(edge));
+    if (!this.#edges.has(edge.id)) {
+      this.#edges.set(edge.id, new EdgeNode(edge));
     }
-    return this.edges.get(edge.id);
+    return this.#edges.get(edge.id);
   }
 
   /**
    * Calculates all dependencies in the graph based on subjects and edges.
    */
   calculateDependencies() {
-    for (const node of this.nodes) {
+    for (const node of this.#nodes) {
       node.calculateDependencies(this);
     }
-    for (const node of this.nodes) {
+    for (const node of this.#nodes) {
       node.simplifyTransitiveDependencies();
     }
   }
@@ -91,11 +95,11 @@ class Graph {
    * @return {AbstractNode | null}
    */
   getNodeById(id) {
-    if (this.subjects.has(id)) {
-      return this.subjects.get(id);
+    if (this.#subjects.has(id)) {
+      return this.#subjects.get(id);
     }
-    if (this.edges.has(id)) {
-      return this.edges.get(id);
+    if (this.#edges.has(id)) {
+      return this.#edges.get(id);
     }
     return null;
   }
@@ -105,12 +109,14 @@ class Graph {
  * @abstract
  */
 class AbstractNode {
+  /** @type {Set<Link>} */
+  #dependencies;
+
   constructor() {
     if (new.target === AbstractNode) {
       throw new TypeError('Cannot instantiate AbstractNode');
     }
-    /** @type {Set<Link>} */
-    this.dependencies = new Set();
+    this.#dependencies = new Set();
   }
 
   /**
@@ -119,13 +125,13 @@ class AbstractNode {
    * path to the same target node.
    */
   simplifyTransitiveDependencies() {
-    for (const link of this.dependencies) {
+    for (const link of this.#dependencies) {
       // Temporarily remove the link
-      this.dependencies.delete(link);
+      this.#dependencies.delete(link);
       if (this.#dependsOn(link.to)) {
         continue; // This link is redundant
       }
-      this.dependencies.add(link); // Keep the link if it's not redundant
+      this.#dependencies.add(link); // Keep the link if it's not redundant
     }
   }
 
@@ -138,29 +144,49 @@ class AbstractNode {
     if (this === target) return true;
     if (visited.has(this)) return false;
     visited.add(this);
-    return Array.from(this.dependencies).some(link => link.from.#dependsOn(node, visited));
+    return Array.from(this.#dependencies).some(link => link.from.#dependsOn(node, visited));
+  }
+
+  /**
+   * @param {string} subjectId
+   * @param {StatusId} statusId
+   * @returns {boolean}
+   */
+  hasDependency(subjectId, statusId) {
+    return Array.from(this.#dependencies)
+      .some(link => link.from.hasDependency(subjectId, statusId));
+  }
+
+  /**
+   * @param {AbstractNode} node
+   * @protected
+   */
+  _addDependency(node) {
+    this.#dependencies.add(new Link(this, node));
   }
 }
 
 class SubjectNode extends AbstractNode {
+  /** @type {Subject} */
+  #data;
+
   /** @param {Subject} data */
   constructor(data) {
     super();
-    /** @type {Subject} */
-    this.data = data;
+    this.#data = data;
   }
 
   /**
    * @param {Graph} graph
    */
   calculateDependencies(graph) {
-    this.data.prerequisites
+    this.#data.prerequisites
       .flatMap(prerequisite => prerequisite.dependencies)
       .flatMap(dependency => dependency.subjects)
       .forEach(subjectId => {
         const targetNode = graph.getNodeById(subjectId);
         if (targetNode) {
-          this.dependencies.add(new Link(this, targetNode));
+          this._addDependency(targetNode);
         } else {
           log.warn(`Subject with ID ${subjectId} not found in graph.`);
         }
@@ -171,7 +197,7 @@ class SubjectNode extends AbstractNode {
    * @param {AvailabilityId}
    */
   satisfies(availabilityId) {
-    const prerequisite = this.data.prerequisites
+    const prerequisite = this.#data.prerequisites
       .find(p => p.availabilityId === availabilityId);
 
     if (!prerequisite) {
@@ -189,12 +215,10 @@ class SubjectNode extends AbstractNode {
    * @returns {boolean}
    */
   hasDependency(subjectId, statusId) {
-    if (this.data.id === subjectId) {
-      return this.data.status === statusId;
+    if (this.#data.id === subjectId) {
+      return this.#data.status === statusId;
     }
-
-    return Array.from(this.dependencies)
-      .some(link => link.from.hasDependency(subjectId, statusId));
+    return super.hasDependency(subjectId, statusId);
   }
 }
 
@@ -217,7 +241,7 @@ class EdgeNode extends AbstractNode {
     this.data.dependencies.forEach(sourceId => {
       const sourceNode = graph.getNodeById(sourceId);
       if (sourceNode) {
-        this.dependencies.add(new Link(this, sourceNode));
+        this._addDependency(sourceNode);
       } else {
         log.warn(`Edge dependency with ID ${sourceId} not found in graph.`);
       }
