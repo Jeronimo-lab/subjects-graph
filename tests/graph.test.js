@@ -36,6 +36,7 @@ describe('Graph rendering (I1 -> I2)', () => {
       // Should draw 2 circles (one per subject)
       expect(drawer.shapes.circles).toHaveLength(2);
       expect(drawer.shapes.circles).toContainEqual({
+        id: 'I1',
         label: 'I1',
         tooltip: 'Inglés I',
         position: { x: 400, y: 100 },
@@ -43,6 +44,7 @@ describe('Graph rendering (I1 -> I2)', () => {
         borderColor: availabilityColor(i1Avail),
       });
       expect(drawer.shapes.circles).toContainEqual({
+        id: 'I2',
         label: 'I2',
         tooltip: 'Inglés II',
         position: { x: 500, y: 100 },
@@ -164,6 +166,7 @@ describe('Transitive deduplication', () => {
       // Should draw 3 circles with correct colors
       expect(drawer.shapes.circles).toHaveLength(3);
       expect(drawer.shapes.circles).toContainEqual({
+        id: 'AyED',
         label: 'AyED',
         tooltip: 'Algoritmos y Estructuras de Datos',
         position: { x: 100, y: 400 },
@@ -171,6 +174,7 @@ describe('Transitive deduplication', () => {
         borderColor: availabilityColor(ayedAvail),
       });
       expect(drawer.shapes.circles).toContainEqual({
+        id: 'PdP',
         label: 'PdP',
         tooltip: 'Paradigmas de Programación',
         position: { x: 200, y: 400 },
@@ -178,6 +182,7 @@ describe('Transitive deduplication', () => {
         borderColor: availabilityColor(pdpAvail),
       });
       expect(drawer.shapes.circles).toContainEqual({
+        id: 'DDS',
         label: 'DDS',
         tooltip: 'Diseño de Sistemas',
         position: { x: 400, y: 300 },

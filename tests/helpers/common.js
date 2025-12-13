@@ -10,7 +10,7 @@ import data from '../../docs/data.json';
 // Load config from default variant
 /** @type {Variant} */
 // @ts-ignore - JSON import with dynamic key is safe
-const variant = data.variants[data.defaultVariant];
+const variant = data.variants['frba-k08'];
 
 /** @type {Config} */
 export const config = {
