@@ -784,56 +784,56 @@
           "id": "1",
           "name": "Análisis Matemático I",
           "prerequisites": [],
-          "position": { "x": 900, "y": 300 },
+          "position": { "x": 100, "y": 400 },
           "shortName": "AM1"
         },
         {
           "id": "2",
           "name": "Álgebra y Geometría Analítica",
           "prerequisites": [],
-          "position": { "x": 900, "y": 100 },
+          "position": { "x": 100, "y": 600 },
           "shortName": "AGA"
         },
         {
           "id": "3",
           "name": "Física I",
           "prerequisites": [],
-          "position": { "x": 900, "y": 500 },
+          "position": { "x": 100, "y": 100 },
           "shortName": "F1"
         },
         {
           "id": "4",
           "name": "Inglés I",
           "prerequisites": [],
-          "position": { "x": 300, "y": 100 },
+          "position": { "x": 800, "y": 400 },
           "shortName": "I1"
         },
         {
           "id": "5",
           "name": "Lógica y Estructuras Discretas",
           "prerequisites": [],
-          "position": { "x": 100, "y": 600 },
+          "position": { "x": 600, "y": 600 },
           "shortName": "LyED"
         },
         {
           "id": "6",
           "name": "Algoritmos y Estructuras de Datos",
           "prerequisites": [],
-          "position": { "x": 100, "y": 200 },
+          "position": { "x": 600, "y": 500 },
           "shortName": "AyED"
         },
         {
           "id": "7",
           "name": "Arquitectura de Computadoras",
           "prerequisites": [],
-          "position": { "x": 400, "y": 700 },
+          "position": { "x": 400, "y": 100 },
           "shortName": "AdC"
         },
         {
           "id": "8",
           "name": "Sistemas y Procesos de Negocio",
           "prerequisites": [],
-          "position": { "x": 200, "y": 300 },
+          "position": { "x": 600, "y": 400 },
           "shortName": "SyPN"
         },
         {
@@ -847,7 +847,7 @@
               ]
             }
           ],
-          "position": { "x": 800, "y": 200 },
+          "position": { "x": 200, "y": 400 },
           "shortName": "AM2"
         },
         {
@@ -861,14 +861,14 @@
               ]
             }
           ],
-          "position": { "x": 800, "y": 500 },
+          "position": { "x": 100, "y": 200 },
           "shortName": "F2"
         },
         {
           "id": "11",
           "name": "Ingeniería y Sociedad",
           "prerequisites": [],
-          "position": { "x": 100, "y": 100 },
+          "position": { "x": 800, "y": 200 },
           "shortName": "IyS"
         },
         {
@@ -882,7 +882,7 @@
               ]
             }
           ],
-          "position": { "x": 500, "y": 100 },
+          "position": { "x": 800, "y": 500 },
           "shortName": "I2"
         },
         {
@@ -896,7 +896,7 @@
               ]
             }
           ],
-          "position": { "x": 200, "y": 500 },
+          "position": { "x": 400, "y": 500 },
           "shortName": "SSL"
         },
         {
@@ -910,8 +910,8 @@
               ]
             }
           ],
-          "position": { "x": 200, "y": 200 },
-          "shortName": "PdP"
+          "position": { "x": 700, "y": 400 },
+          "shortName": "PdeP"
         },
         {
           "id": "15",
@@ -927,7 +927,7 @@
               ]
             }
           ],
-          "position": { "x": 200, "y": 600 },
+          "position": { "x": 500, "y": 100 },
           "shortName": "SO"
         },
         {
@@ -944,8 +944,8 @@
               ]
             }
           ],
-          "position": { "x": 200, "y": 400 },
-          "shortName": "AdSdI"
+          "position": { "x": 500, "y": 400 },
+          "shortName": "ASI"
         },
         {
           "id": "17",
@@ -958,7 +958,7 @@
               ]
             }
           ],
-          "position": { "x": 700, "y": 400 },
+          "position": { "x": 300, "y": 500 },
           "shortName": "PyE"
         },
         {
@@ -972,7 +972,7 @@
               ]
             }
           ],
-          "position": { "x": 600, "y": 400 },
+          "position": { "x": 900, "y": 300 },
           "shortName": "Ec"
         },
         {
@@ -990,7 +990,7 @@
               ]
             }
           ],
-          "position": { "x": 400, "y": 500 },
+          "position": { "x": 400, "y": 400 },
           "shortName": "BDD"
         },
         {
@@ -1008,7 +1008,7 @@
               ]
             }
           ],
-          "position": { "x": 300, "y": 500 },
+          "position": { "x": 500, "y": 300 },
           "shortName": "DdS"
         },
         {
@@ -1025,8 +1025,8 @@
               ]
             }
           ],
-          "position": { "x": 600, "y": 600 },
-          "shortName": "CdD"
+          "position": { "x": 400, "y": 200 },
+          "shortName": "Com"
         },
         {
           "id": "22",
@@ -1040,8 +1040,8 @@
               ]
             }
           ],
-          "position": { "x": 700, "y": 200 },
-          "shortName": "MS"
+          "position": { "x": 200, "y": 300 },
+          "shortName": "AN"
         },
         {
           "id": "23",
@@ -1058,8 +1058,8 @@
               ]
             }
           ],
-          "position": { "x": 400, "y": 300 },
-          "shortName": "DdSI"
+          "position": { "x": 700, "y": 300 },
+          "shortName": "DSI"
         },
         {
           "id": "24",
@@ -1075,7 +1075,7 @@
               ]
             }
           ],
-          "position": { "x": 200, "y": 100 },
+          "position": { "x": 800, "y": 100 },
           "shortName": "L"
         },
         {
@@ -1093,8 +1093,8 @@
               ]
             }
           ],
-          "position": { "x": 400, "y": 400 },
-          "shortName": "IyCdS"
+          "position": { "x": 500, "y": 200 },
+          "shortName": "ICS"
         },
         {
           "id": "26",
@@ -1107,7 +1107,7 @@
               ]
             }
           ],
-          "position": { "x": 500, "y": 600 },
+          "position": { "x": 600, "y": 100 },
           "shortName": "RdD"
         },
         {
@@ -1117,12 +1117,11 @@
             {
               "availabilityId": "FINAL_EXAM_AVAILABLE",
               "dependencies": [
-                { "statusId": "FINAL_EXAM_PENDING", "subjects": ["17"] },
-                { "statusId": "APPROVED", "subjects": ["9"] }
+                { "statusId": "FINAL_EXAM_PENDING", "subjects": ["17", "22"] }
               ]
             }
           ],
-          "position": { "x": 600, "y": 200 },
+          "position": { "x": 300, "y": 100 },
           "shortName": "IO"
         },
         {
@@ -1137,11 +1136,11 @@
               ]
             }
           ],
-          "position": { "x": 500, "y": 300 },
+          "position": { "x": 300, "y": 400 },
           "shortName": "S"
         },
         {
-          "id": "28",
+          "id": "29",
           "name": "Tecnologías para la Automatización",
           "prerequisites": [
             {
@@ -1152,11 +1151,11 @@
               ]
             }
           ],
-          "position": { "x": 600, "y": 400 },
+          "position": { "x": 200, "y": 200 },
           "shortName": "TpA"
         },
         {
-          "id": "29",
+          "id": "30",
           "name": "Administración de Sistemas de Información",
           "prerequisites": [
             {
@@ -1173,8 +1172,8 @@
               ]
             }
           ],
-          "position": { "x": 400, "y": 200 },
-          "shortName": "AdSI"
+          "position": { "x": 700, "y": 200 },
+          "shortName": "ASI"
         },
         {
           "id": "31",
@@ -1188,7 +1187,7 @@
               ]
             }
           ],
-          "position": { "x": 500, "y": 400 },
+          "position": { "x": 300, "y": 300 },
           "shortName": "IA"
         },
         {
@@ -1203,7 +1202,7 @@
               ]
             }
           ],
-          "position": { "x": 500, "y": 500 },
+          "position": { "x": 400, "y": 300 },
           "shortName": "CdD"
         },
         {
@@ -1224,7 +1223,7 @@
               ]
             }
           ],
-          "position": { "x": 500, "y": 300 },
+          "position": { "x": 900, "y": 100 },
           "shortName": "SdG"
         },
         {
@@ -1242,7 +1241,7 @@
               ]
             }
           ],
-          "position": { "x": 600, "y": 500 },
+          "position": { "x": 700, "y": 100 },
           "shortName": "GG"
         },
         {
@@ -1260,11 +1259,120 @@
               ]
             }
           ],
-          "position": { "x": 700, "y": 500 },
+          "position": { "x": 600, "y": 200 },
           "shortName": "SSI"
         }
       ],
-      "edges": []
+      "edges": [
+        {
+          "id": "AM1,AGA:AM2,PyE,Ec",
+          "position": { "x": 100, "y": 500 },
+          "dependencies": ["1", "2"],
+          "targets": ["9", "17", "AM1,AGA:AM2,Ec:1"]
+        },
+        {
+          "id": "AM1,AGA:AM2,Ec:1",
+          "position": { "x": 300, "y": 700 },
+          "dependencies": ["AM1,AGA:AM2,PyE,Ec"],
+          "targets": ["AM1,AGA:AM2,Ec:2"]
+        },
+        {
+          "id": "AM1,AGA:AM2,Ec:2",
+          "position": { "x": 700, "y": 700 },
+          "dependencies": ["AM1,AGA:AM2,Ec:1"],
+          "targets": ["AM1,AGA:AM2,Ec:3"]
+        },
+        {
+          "id": "AM1,AGA:AM2,Ec:3",
+          "position": { "x": 900, "y": 500 },
+          "dependencies": ["AM1,AGA:AM2,Ec:2"],
+          "targets": ["18"]
+        },
+        {
+          "id": "AyED,LyED:PdeP",
+          "position": { "x": 700, "y": 500 },
+          "dependencies": ["6", "5"],
+          "targets": ["14"]
+        },
+        {
+          "id": "AyED,LyED:SSL",
+          "position": { "x": 500, "y": 500 },
+          "dependencies": ["6", "5"],
+          "targets": ["13"]
+        },
+        {
+          "id": "DSI,Ec:ASI,SdG",
+          "position": { "x": 800, "y": 300 },
+          "dependencies": ["23", "18"],
+          "targets": ["30", "DSI,Ec:SdG"]
+        },
+        {
+          "id": "DSI,Ec:SdG",
+          "position": { "x": 900, "y": 200 },
+          "dependencies": ["DSI,Ec:ASI,SdG"],
+          "targets": ["33"]
+        },
+        {
+          "id": "IO:SdG:1",
+          "position": { "x": 400, "y": 0 },
+          "dependencies": ["27"],
+          "targets": ["IO:SdG:2"]
+        },
+        {
+          "id": "IO:SdG:2",
+          "position": { "x": 800, "y": 0 },
+          "dependencies": ["IO:SdG:1"],
+          "targets": ["33"]
+        },
+        {
+          "id": "ASI,PdP:DdS,DSI",
+          "position": { "x": 600, "y": 300 },
+          "dependencies": ["16", "14"],
+          "targets": ["20", "23"]
+        },
+        {
+          "id": "F1:Com:1",
+          "position": { "x": 200, "y": 100 },
+          "dependencies": ["3"],
+          "targets": ["F1:Com:2"]
+        },
+        {
+          "id": "F1:Com:2",
+          "position": { "x": 300, "y": 200 },
+          "dependencies": ["F1:Com:1"],
+          "targets": ["21"]
+        },
+        {
+          "id": "PyE:IO:1",
+          "position": { "x": 100, "y": 700 },
+          "dependencies": ["17"],
+          "targets": ["PyE:IO:2"]
+        },
+        {
+          "id": "PyE:IO:2",
+          "position": { "x": 0, "y": 700 },
+          "dependencies": ["PyE:IO:1"],
+          "targets": ["PyE:IO:3"]
+        },
+        {
+          "id": "PyE:IO:3",
+          "position": { "x": 0, "y": 100 },
+          "dependencies": ["PyE:IO:2"],
+          "targets": ["PyE:IO:4"]
+        },
+        {
+          "id": "PyE:IO:4",
+          "position": { "x": 100, "y": 0 },
+          "dependencies": ["PyE:IO:3"],
+          "targets": ["PyE:IO:5"]
+        },
+        {
+          "id": "PyE:IO:5",
+          "position": { "x": 200, "y": 0 },
+          "dependencies": ["PyE:IO:4"],
+          "targets": ["27"]
+        }
+      ]
     }
   }
 }
