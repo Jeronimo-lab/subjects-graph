@@ -51,6 +51,7 @@ import { Graph } from './graph.js';
       this.nodes = [];
       this.edges = [];
       this.positions = new Set();
+      this.leafSubjectIds = new Set();
     }
 
     drawCircle({ id, label, tooltip, position: { x, y }, fillColor, borderColor }) {
@@ -62,6 +63,7 @@ import { Graph } from './graph.js';
           nodeType: 'subject',
           status: this._getStatusIdByColor(fillColor),
           borderState: this._getAvailabilityIdByColor(borderColor),
+          isLeaf: true,
         },
         position: { x, y },
         locked: true,
@@ -99,17 +101,28 @@ import { Graph } from './graph.js';
     }
 
     drawArrow({ id, from, to, color }) {
+      const fromNode = this.nodes.find(n => n.data.id === from);
+      if (!fromNode) {
+        console.warn(`Edge ${id} has invalid from node ${from}`);
+        return;
+      }
+
       const toNode = this.nodes.find(n => n.data.id === to);
-      const toInvisible = toNode?.data.isInvisible ?? false;
+      if (!toNode) {
+        console.warn(`Edge ${id} has invalid to node ${to}`);
+        return;
+      }
+
       this.edges.push({
         data: {
           id,
           source: from,
           target: to,
-          toInvisible,
+          toInvisible: toNode.data.isInvisible ?? false,
           edgeColor: this._getAvailabilityIdByColor(color),
         },
       });
+      fromNode.data.isLeaf = false;
     }
 
     _getStatusIdByColor(color) {
@@ -282,6 +295,14 @@ import { Graph } from './graph.js';
           'background-color': config.statuses[0].color,
           'transition-property': 'background-color, border-color',
           'transition-duration': '0.3s'
+        }
+      },
+
+      // Leaf subject nodes (gold label)
+      {
+        selector: 'node[?isLeaf]',
+        style: {
+          'color': '#FFD700'
         }
       },
 
