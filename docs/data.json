@@ -1026,7 +1026,7 @@
             }
           ],
           "position": { "x": 400, "y": 200 },
-          "shortName": "Com"
+          "shortName": "CoD"
         },
         {
           "id": "22",
@@ -1203,7 +1203,7 @@
             }
           ],
           "position": { "x": 400, "y": 300 },
-          "shortName": "CdD"
+          "shortName": "CiD"
         },
         {
           "id": "33",
@@ -1337,15 +1337,15 @@
           "targets": ["ASI,PdeP:DdS,DSI"]
         },
         {
-          "id": "F1:Com:1",
+          "id": "F1:CoD:1",
           "position": { "x": 200, "y": 100 },
           "dependencies": ["3"],
-          "targets": ["F1:Com:2"]
+          "targets": ["F1:CoD:2"]
         },
         {
-          "id": "F1:Com:2",
+          "id": "F1:CoD:2",
           "position": { "x": 300, "y": 200 },
-          "dependencies": ["F1:Com:1"],
+          "dependencies": ["F1:CoD:1"],
           "targets": ["21"]
         },
         {
@@ -1397,7 +1397,7 @@
           "targets": ["25"]
         },
         {
-          "id": "Com:RdD",
+          "id": "CoD:RdD",
           "position": { "x": 500, "y": 200 },
           "dependencies": ["21"],
           "targets": ["26"]
