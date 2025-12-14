@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subjects-graph-cache-710c7da';
+const CACHE_NAME = 'subjects-graph-cache-{{COMMIT_SHA}}';
 const ASSETS_TO_CACHE = [
   '../',
   '../index.html',
