@@ -317,7 +317,8 @@ import { Graph } from './graph.js';
           'border-width': 3,
           'border-color': 'data(borderColor)',
           'transition-property': 'border-color',
-          'transition-duration': '0.3s'
+          'transition-duration': '0.3s',
+          'events': 'no',
         }
       },
 
@@ -329,7 +330,8 @@ import { Graph } from './graph.js';
           'width': 0.0001,
           'height': 0.0001,
           'border-width': 0,
-          'label': ''
+          'events': 'no',
+          'label': '',
         }
       },
 
@@ -353,7 +355,8 @@ import { Graph } from './graph.js';
           'curve-style': 'bezier',
           'arrow-scale': 1.5,
           'transition-property': 'line-color, target-arrow-color',
-          'transition-duration': '0.3s'
+          'transition-duration': '0.3s',
+          'events': 'no',
         }
       },
 
@@ -416,16 +419,13 @@ import { Graph } from './graph.js';
       tooltip.textContent = e.target.data('name');
       tooltip.style.display = 'block';
     });
-    cy.on('mouseover', 'node[nodeType="connector"]', function() {
-      container.style.cursor = 'default';
-    });
     cy.on('mousemove', 'node[nodeType="subject"]', function(e) {
       const pos = e.renderedPosition;
       tooltip.style.left = (pos.x + 15) + 'px';
       tooltip.style.top = (pos.y + 15) + 'px';
     });
     cy.on('mouseout', 'node', function() {
-      container.style.cursor = 'default';
+      container.style.cursor = 'grab';
       tooltip.style.display = 'none';
     });
 

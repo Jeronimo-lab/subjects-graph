@@ -131,7 +131,7 @@ header h1 {
   height: 700px;
   border-radius: 8px;
   background: var(--bg-primary);
-  cursor: default;
+  cursor: grab;
 }
 
 /* Watermark */
