@@ -1,24 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { Graph } from '../../docs/graph.js';
+import { Graph } from '~/graph.js';
 import { config, fullVariant, availabilityColor } from '../helpers/common.js';
 import { createMockDrawer } from '../helpers/mockDrawer.js';
 
 /**
  * Bug: All PENDING subjects showing APPROVED arrow color
- * 
+ *
  * Issue: With the full graph and ALL subjects set to PENDING,
  * some arrows were incorrectly showing APPROVED color instead of PENDING.
  * Affected paths: F2 -> TdC, I1 -> AdR, DDS -> IA
- * 
- * Root cause: The getAvailability() methods used .findLast() which doesn't 
+ *
+ * Root cause: The getAvailability() methods used .findLast() which doesn't
  * break when a condition isn't met - it just skips to the next item. However,
  * availability requirements are accumulative: to reach FINAL_EXAM_AVAILABLE,
  * you must first satisfy ENROLL_AVAILABLE prerequisites.
- * 
+ *
  * Fix: Changed to a procedural approach that iterates through each availability
  * level in order and returns early when a level's prerequisites are not satisfied.
  * This ensures accumulative requirements are properly enforced.
- * 
+ *
  * How to contribute bug fixes:
  * 1. Create a test file in tests/bugs/ that reproduces the bug
  * 2. Use fullVariant to test with the complete graph when needed

@@ -1,11 +1,11 @@
-/** @typedef {import('../../docs/graph.js').Config} Config */
-/** @typedef {import('../../docs/graph.js').Variant} Variant */
-/** @typedef {import('../../docs/graph.js').Subject} Subject */
-/** @typedef {import('../../docs/graph.js').Edge} Edge */
-/** @typedef {import('../../docs/graph.js').StatusId} StatusId */
-/** @typedef {import('../../docs/graph.js').AvailabilityId} AvailabilityId */
+/** @typedef {import('~/graph.js').Config} Config */
+/** @typedef {import('~/graph.js').Variant} Variant */
+/** @typedef {import('~/graph.js').Subject} Subject */
+/** @typedef {import('~/graph.js').Edge} Edge */
+/** @typedef {import('~/graph.js').StatusId} StatusId */
+/** @typedef {import('~/graph.js').AvailabilityId} AvailabilityId */
 
-import data from '../../docs/data.json';
+import data from '~/data.json';
 
 // Load config from default variant
 /** @type {Variant} */
