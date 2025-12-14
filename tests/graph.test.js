@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Graph } from '../docs/graph.js';
-import { config, subjects, edges, statusColor, availabilityColor } from './helpers/common.js';
+import { config, subjects, edges, statusColor, availabilityColor, textColor } from './helpers/common.js';
 import { createMockDrawer } from './helpers/mockDrawer.js';
 
 describe('Graph rendering (I1 -> I2)', () => {
@@ -42,7 +42,7 @@ describe('Graph rendering (I1 -> I2)', () => {
         position: { x: 400, y: 100 },
         fillColor: statusColor(i1Status),
         borderColor: availabilityColor(i1Avail),
-        isLeaf: false,
+        textColor: textColor(false),
       });
       expect(drawer.shapes.circles).toContainEqual({
         id: 'I2',
@@ -51,7 +51,7 @@ describe('Graph rendering (I1 -> I2)', () => {
         position: { x: 500, y: 100 },
         fillColor: statusColor(i2Status),
         borderColor: availabilityColor(i2Avail),
-        isLeaf: true,
+        textColor: textColor(true),
       });
 
       // Should draw 1 arrow from I1 to I2
@@ -174,7 +174,7 @@ describe('Transitive deduplication', () => {
         position: { x: 100, y: 400 },
         fillColor: statusColor(ayedStatus),
         borderColor: availabilityColor(ayedAvail),
-        isLeaf: false,
+        textColor: textColor(false),
       });
       expect(drawer.shapes.circles).toContainEqual({
         id: 'PdP',
@@ -183,7 +183,7 @@ describe('Transitive deduplication', () => {
         position: { x: 200, y: 400 },
         fillColor: statusColor(pdpStatus),
         borderColor: availabilityColor(pdpAvail),
-        isLeaf: false,
+        textColor: textColor(false),
       });
       expect(drawer.shapes.circles).toContainEqual({
         id: 'DDS',
@@ -192,7 +192,7 @@ describe('Transitive deduplication', () => {
         position: { x: 400, y: 300 },
         fillColor: statusColor(ddsStatus),
         borderColor: availabilityColor(ddsAvail),
-        isLeaf: true,
+        textColor: textColor(true),
       });
 
       // Should draw 2 arrows with correct colors (NOT AyED -> DDS)

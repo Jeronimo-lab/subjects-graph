@@ -76,7 +76,7 @@
  * @property {Position} position
  * @property {string} fillColor
  * @property {string} borderColor
- * @property {boolean} isLeaf
+ * @property {string} textColor
  *
  * @typedef {object} Position
  * @property {number} x
@@ -382,7 +382,7 @@ class SubjectNode extends AbstractNode {
       position: this.#data.position,
       fillColor: status.color,
       borderColor: this.getAvailability().color,
-      isLeaf: this.#isLeaf,
+      textColor: this.#isLeaf ? '#FFD700' : '#FFFFFF',
     });
   }
 

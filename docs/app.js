@@ -53,7 +53,7 @@ import { Graph } from './graph.js';
       this.positions = new Set();
     }
 
-    drawCircle({ id, label, tooltip, position: { x, y }, fillColor, borderColor, isLeaf }) {
+    drawCircle({ id, label, tooltip, position: { x, y }, fillColor, borderColor, textColor }) {
       this.nodes.push({
         data: {
           id,
@@ -62,7 +62,7 @@ import { Graph } from './graph.js';
           nodeType: 'subject',
           status: this._getStatusIdByColor(fillColor),
           borderState: this._getAvailabilityIdByColor(borderColor),
-          isLeaf,
+          isLeaf: textColor === '#FFD700',
         },
         position: { x, y },
         locked: true,
