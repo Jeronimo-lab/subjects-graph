@@ -76,6 +76,7 @@
  * @property {Position} position
  * @property {string} fillColor
  * @property {string} borderColor
+ * @property {boolean} isLeaf
  *
  * @typedef {object} Position
  * @property {number} x
@@ -139,6 +140,9 @@ export class Graph {
     }
     for (const node of this.#nodes.values()) {
       node.simplifyTransitiveDependencies();
+    }
+    for (const node of this.#nodes.values()) {
+      node.calculateLeafDependencies();
     }
   }
 
@@ -226,6 +230,24 @@ class AbstractNode {
   }
 
   /**
+   * Toggles the leaf status off for all dependencies.
+   * A leaf node is a node that no other node depends on.
+   * This can only be determined after all links are established.
+   */
+  calculateLeafDependencies() {
+    for (const link of this.#dependencies) {
+      link.from.untoggleLeaf();
+    }
+  }
+
+  /**
+   * Toggles the leaf status off.
+   * A leaf node is a node that no other node depends on.
+   * This can only be determined after all links are established.
+   */
+  untoggleLeaf() {}
+
+  /**
    * @param {AbstractNode} node
    * @param {Set<AbstractNode>} [visited=new Set()]
    * @returns {boolean}
@@ -303,6 +325,9 @@ class SubjectNode extends AbstractNode {
   /** @type {Subject} */
   #data;
 
+  /** @type {boolean} */
+  #isLeaf = true;
+
   /**
    * @param {Config} config
    * @param {Subject} data
@@ -335,6 +360,15 @@ class SubjectNode extends AbstractNode {
   }
 
   /**
+   * Toggles the leaf status off.
+   * A leaf node is a node that no other node depends on.
+   * This can only be determined after all links are established.
+   */
+  untoggleLeaf() {
+    this.#isLeaf = false;
+  }
+
+  /**
    * Renders the node (shape only). Links are rendered separately by
    * `renderLinks` to allow graphs to draw nodes first and arrows later.
    * @param {Drawer} drawer
@@ -348,6 +382,7 @@ class SubjectNode extends AbstractNode {
       position: this.#data.position,
       fillColor: status.color,
       borderColor: this.getAvailability().color,
+      isLeaf: this.#isLeaf,
     });
   }
 
