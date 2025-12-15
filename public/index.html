@@ -29,19 +29,6 @@
             '--border-color': '#334155', '--accent-color': '#60a5fa',
           }
         },
-        'bayek-dark': {
-          name: 'Bayek Dark',
-          colors: {
-            '--bg-primary': '#060b14', '--bg-secondary': '#0d1520', '--bg-tertiary': '#141f2c',
-            '--fill-color-1': '#060b14', '--fill-color-2': '#263447',
-            '--fill-color-3': '#8a7525', '--fill-color-4': '#dbb138', '--fill-color-5': '#e8c760',
-            '--border-color-2': '#263446', '--border-color-3': '#8a7526', '--border-color-4': '#dbb137',
-            '--btn-secondary': '#263447', '--btn-secondary-hover': '#243040',
-            '--btn-reset': '#b91c1c', '--btn-reset-hover': '#991b1b',
-            '--text-primary': '#f5f0e6', '--text-secondary': '#ffffff', '--text-muted': '#a0a8b0',
-            '--border-color': '#263448', '--accent-color': '#e8c760',
-          }
-        },
         'sakura-dark': {
           name: 'Sakura Dark',
           colors: {
@@ -55,8 +42,21 @@
             '--border-color': '#334155', '--accent-color': '#f0abfc',
           },
         },
+        'default-dark': {
+          name: 'Default Dark',
+          colors: {
+            '--bg-primary': '#060b14', '--bg-secondary': '#0d1520', '--bg-tertiary': '#141f2c',
+            '--fill-color-1': '#060b14', '--fill-color-2': '#263447',
+            '--fill-color-3': '#8a7525', '--fill-color-4': '#dbb138', '--fill-color-5': '#e8c760',
+            '--border-color-2': '#263446', '--border-color-3': '#8a7526', '--border-color-4': '#dbb137',
+            '--btn-secondary': '#263447', '--btn-secondary-hover': '#243040',
+            '--btn-reset': '#b91c1c', '--btn-reset-hover': '#991b1b',
+            '--text-primary': '#f5f0e6', '--text-secondary': '#ffffff', '--text-muted': '#a0a8b0',
+            '--border-color': '#263448', '--accent-color': '#e8c760',
+          }
+        },
       };
-      window.DEFAULT_THEME = 'github-dark';
+      window.DEFAULT_THEME = 'default-dark';
       // Apply saved theme immediately to prevent flicker
       (function() {
         const saved = localStorage.getItem('selectedTheme');
@@ -86,9 +86,9 @@
                     <option value="frba-k08">UTN FRBA - Ingeniería en Sistemas de Información - Plan K08</option>
                 </select>
                 <select id="theme-select" class="theme-select">
+                    <option value="default-dark">Default Dark</option>
                     <option value="github-dark">GitHub Dark</option>
                     <option value="sakura-dark">Sakura Dark</option>
-                    <option value="bayek-dark">Bayek Dark</option>
                 </select>
             </div>
         </header>
