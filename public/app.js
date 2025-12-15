@@ -240,6 +240,11 @@ import { Graph } from './graph.js';
 
     // Set dropdown to current variant
     variantSelect.value = currentVariant;
+    variantSelect.classList.remove('skeleton');
+    variantSelect.style.display = 'block';
+
+    // Hide header skeletons
+    document.querySelectorAll('.header-skeleton').forEach(el => el.style.display = 'none');
 
     // Load variant data
     const variantData = appData.variants[currentVariant];
@@ -254,10 +259,18 @@ import { Graph } from './graph.js';
     const theme = window.THEMES[currentTheme];
     themeColors = theme?.colors ?? {};
 
-    // Set theme dropdown value
+    // Set theme dropdown value and populate options
     const themeSelect = document.getElementById('theme-select');
     if (themeSelect) {
+      themeSelect.innerHTML = '';
+      Object.entries(window.THEMES).forEach(([id, theme]) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = theme.name;
+        themeSelect.appendChild(option);
+      });
       themeSelect.value = currentTheme;
+      themeSelect.style.display = 'block';
     }
 
     // Set up config with resolved CSS colors
@@ -273,6 +286,12 @@ import { Graph } from './graph.js';
 
     // Generate legend
     generateLegend();
+
+    // Remove skeleton loading state
+    const legendItems = document.querySelector('.legend-items');
+    if (legendItems) {
+      legendItems.classList.remove('skeleton');
+    }
 
     // Load saved statuses from localStorage and merge with subjects
     const savedStatuses = loadStatuses();

@@ -82,13 +82,14 @@
         <header>
             <h1>Grafo de Materias</h1>
             <div class="header-controls">
-                <select id="variant-select" class="variant-select">
-                    <option value="frba-k08">UTN FRBA - Ingeniería en Sistemas de Información - Plan K08</option>
+                <div class="header-skeleton desktop-skeleton"></div>
+                <div class="header-skeleton mobile-skeleton"></div>
+                <div class="header-skeleton mobile-skeleton"></div>
+                <select id="variant-select" class="variant-select" style="display: none;">
+                    <option value="">Seleccionar variante...</option>
                 </select>
-                <select id="theme-select" class="theme-select">
-                    <option value="default-dark">Default Dark</option>
-                    <option value="github-dark">GitHub Dark</option>
-                    <option value="sakura-dark">Sakura Dark</option>
+                <select id="theme-select" class="theme-select" style="display: none;">
+                    <option value="">Seleccionar tema...</option>
                 </select>
             </div>
         </header>
@@ -124,9 +125,35 @@
             <aside class="legend-panel">
                 <h2>Referencias</h2>
                 <div class="legend-items">
-                    <div id="status-legend"></div>
+                    <div id="status-legend">
+                        <div class="skeleton-item">
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-text"></div>
+                        </div>
+                        <div class="skeleton-item">
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-text"></div>
+                        </div>
+                        <div class="skeleton-item">
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-text"></div>
+                        </div>
+                        <div class="skeleton-item">
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-text"></div>
+                        </div>
+                    </div>
                     <hr class="legend-separator">
-                    <div id="border-legend"></div>
+                    <div id="border-legend">
+                        <div class="skeleton-item">
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-text"></div>
+                        </div>
+                        <div class="skeleton-item">
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-text"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="controls">
