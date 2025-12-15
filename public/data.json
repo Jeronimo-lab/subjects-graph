@@ -1,14 +1,5 @@
 {
   "defaultVariant": "frba-k08",
-  "colors": {
-    "--fill-color-1": "#111827",
-    "--fill-color-2": "#374151",
-    "--fill-color-3": "#2255d4",
-    "--fill-color-4": "#3b82f6",
-    "--border-color-2": "#374152",
-    "--border-color-3": "#2255d5",
-    "--border-color-4": "#3b82f7"
-  },
   "variants": {
     "frba-k08": {
       "name": "UTN FRBA - Ingeniería en Sistemas de Información - Plan K08",

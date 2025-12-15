@@ -1,40 +1,11 @@
-/* CSS Variables for theming */
+/* CSS Variables - colors are set by theme in index.html */
 :root {
-  /* Background colors - GitHub Dark theme */
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-
-  /* Node fill colors (status) - based on light blue #3b82f6 at different intensities */
-  --fill-color-1: #111827;            /* Neutral dark gray - pending */
-  --fill-color-2: #374151;            /* Neutral medium gray - in progress */
-  --fill-color-3: #2255d4;            /* Medium-deep blue - final exam pending */
-  --fill-color-4: #3b82f6;            /* 100% light blue - approved */
-  --fill-color-5: #60a5fa;
-
-  /* Node border colors (availability) - similar to fill due to Cytoscape library limitation */
-  --border-color-2: #323b48;          /* Gray - not available */
-  --border-color-3: #2050c8;          /* Deep blue - enroll available */
-  --border-color-4: #387dd9;          /* Light blue - final exam available */
-
-  /* Accent colors */
+  /* Accent colors derived from theme fill colors */
   --accent-blue: var(--fill-color-4);
   --accent-blue-light: var(--fill-color-5);
   --accent-blue-dark: var(--fill-color-3);
 
-  /* Button colors */
-  --btn-secondary: #374151;
-  --btn-secondary-hover: #4b5563;
-  --btn-reset: #dc2626;
-  --btn-reset-hover: #b91c1c;
-
-  /* Text colors */
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-
-  /* Border and shadow */
-  --border-color: #334155;
+  /* Shadow */
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
@@ -80,7 +51,16 @@ header h1 {
   font-weight: 700;
 }
 
-.variant-select {
+.header-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.variant-select,
+.theme-select {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
   font-size: 1rem;
@@ -98,14 +78,21 @@ header h1 {
   white-space: nowrap;
 }
 
-.variant-select:hover {
+.variant-select:hover,
+.theme-select:hover {
   background: var(--bg-secondary);
   border-color: var(--accent-blue);
 }
 
-.variant-select:focus {
+.variant-select:focus,
+.theme-select:focus {
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.theme-select {
+  width: auto;
+  min-width: 120px;
 }
 
 /* Main Content Layout */

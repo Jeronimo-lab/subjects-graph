@@ -6,20 +6,36 @@ import { Graph } from './graph.js';
 
   const VARIANT_STORAGE_KEY = 'selectedVariant';
   const VARIANT_PARAM = 'variant';
+  const THEME_STORAGE_KEY = 'selectedTheme';
 
   // State management
   let cy = null; // Cytoscape instance
   let graph = null; // Graph instance
   let appData = null; // Loaded from data.json
   let currentVariant = null;
+  let currentTheme = null;
   let config = null; // { statuses, availabilities }
 
-  // Color lookup from variant's colors property
-  let colors = null;
+  // Color lookup from current theme
+  let themeColors = null;
 
   // Resolve color variable name to hex value
   function resolveCssColor(varName) {
-    return colors?.[varName] ?? '#000000';
+    return themeColors?.[varName] ?? '#000000';
+  }
+
+  // Apply theme CSS variables to document
+  function applyTheme(theme) {
+    if (!theme?.colors) return;
+    const root = document.documentElement;
+    Object.entries(theme.colors).forEach(([varName, value]) => {
+      root.style.setProperty(varName, value);
+    });
+    // Update meta theme-color for mobile browsers
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme && theme.colors['--bg-primary']) {
+      metaTheme.content = theme.colors['--bg-primary'];
+    }
   }
 
   // Get storage key for current variant
@@ -227,7 +243,22 @@ import { Graph } from './graph.js';
 
     // Load variant data
     const variantData = appData.variants[currentVariant];
-    colors = appData.colors;
+
+    // Load theme from localStorage or use default (themes defined in index.html)
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    currentTheme = (savedTheme && window.THEMES[savedTheme])
+      ? savedTheme
+      : window.DEFAULT_THEME;
+
+    // Get current theme colors from window.THEMES
+    const theme = window.THEMES[currentTheme];
+    themeColors = theme?.colors ?? {};
+
+    // Set theme dropdown value
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+      themeSelect.value = currentTheme;
+    }
 
     // Set up config with resolved CSS colors
     config = {
@@ -523,6 +554,20 @@ import { Graph } from './graph.js';
       }
     });
 
+    // Theme selector
+    document.getElementById('theme-select').addEventListener('change', (e) => {
+      const newThemeId = e.target.value;
+      const newTheme = window.THEMES[newThemeId];
+      if (newTheme) {
+        currentTheme = newThemeId;
+        themeColors = newTheme.colors;
+        applyTheme(newTheme);
+        localStorage.setItem(THEME_STORAGE_KEY, newThemeId);
+        // Reload to re-render graph with new colors
+        location.reload();
+      }
+    });
+
     // Reset button
     document.getElementById('reset-btn').addEventListener('click', () => {
       localStorage.removeItem(getStorageKey());
@@ -645,16 +690,22 @@ import { Graph } from './graph.js';
       const approvedPercent = parseInt(document.getElementById('progress-percentage').textContent);
       const pendingPercent = parseInt(document.getElementById('progress-pending-text').textContent);
 
+      // Get theme colors
+      const bgColor = themeColors['--bg-secondary'] || '#161b22';
+      const trackColor = themeColors['--bg-tertiary'] || '#21262d';
+      const pendingColor = themeColors['--fill-color-3'] || '#2255d4';
+      const approvedColor = themeColors['--fill-color-4'] || '#3b82f6';
+
       // Draw background circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
-      ctx.fillStyle = '#161b22';
+      ctx.fillStyle = bgColor;
       ctx.fill();
 
       // Draw track circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = '#21262d';
+      ctx.strokeStyle = trackColor;
       ctx.lineWidth = strokeWidth;
       ctx.stroke();
 
@@ -662,7 +713,7 @@ import { Graph } from './graph.js';
       if (pendingPercent > 0) {
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pendingPercent / 100));
-        ctx.strokeStyle = '#2255d4';
+        ctx.strokeStyle = pendingColor;
         ctx.lineWidth = strokeWidth;
         ctx.lineCap = 'round';
         ctx.stroke();
@@ -672,21 +723,21 @@ import { Graph } from './graph.js';
       if (approvedPercent > 0) {
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * approvedPercent / 100));
-        ctx.strokeStyle = '#3b82f6';
+        ctx.strokeStyle = approvedColor;
         ctx.lineWidth = strokeWidth;
         ctx.lineCap = 'round';
         ctx.stroke();
       }
 
       // Draw approved percentage text
-      ctx.fillStyle = '#3b82f6';
+      ctx.fillStyle = approvedColor;
       ctx.font = `700 ${1.5 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(`${approvedPercent}%`, centerX, centerY - 6 * gaugeScale);
 
       // Draw pending percentage text
-      ctx.fillStyle = '#2255d4';
+      ctx.fillStyle = pendingColor;
       ctx.font = `600 ${0.75 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.fillText(`${pendingPercent}%`, centerX, centerY + 12 * gaugeScale);
     }
