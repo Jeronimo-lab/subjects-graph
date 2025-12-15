@@ -1,16 +1,15 @@
 const CACHE_NAME = 'subjects-graph-cache-{{COMMIT_SHA}}';
 const ASSETS_TO_CACHE = [
-  '../',
-  '../index.html',
-  '../styles.css',
-  '../app.js',
-  '../graph.js',
-  '../lib/cytoscape.min.js',
-  '../lib/lucide.min.js',
-  '../data.json',
-  './manifest.webmanifest',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './graph.js',
+  './lib/cytoscape.min.js',
+  './lib/lucide.min.js',
+  './data.json',
+  './pwa/manifest.webmanifest',
+  './pwa/icons/icon-192.svg',
+  './pwa/icons/icon-512.svg',
   './offline.html'
 ];
 
