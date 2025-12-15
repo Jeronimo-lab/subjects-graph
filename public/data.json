@@ -11,7 +11,7 @@
   },
   "variants": {
     "frba-k08": {
-      "name": "Ingeniería en Sistemas de Información - UTN FRBA - Plan K08",
+      "name": "UTN FRBA - Ingeniería en Sistemas de Información - Plan K08",
       "statuses": [
         { "id": "PENDING", "name": "Pendiente", "color": "--fill-color-1" },
         { "id": "IN_PROGRESS", "name": "En curso", "color": "--fill-color-2" },
