@@ -292,8 +292,9 @@ import { Graph } from './graph.js';
           'text-valign': 'center',
           'text-halign': 'center',
           'color': 'data(textColor)',
-          'font-size': '16px',
+          'font-size': '18px',
           'font-weight': 'bold',
+          'font-family': 'Open Sans, -apple-system, BlinkMacSystemFont, sans-serif',
           'border-width': 3,
           'border-opacity': 1,
           'background-color': 'data(fillColor)',
@@ -346,7 +347,7 @@ import { Graph } from './graph.js';
       {
         selector: 'edge',
         style: {
-          'width': 3,
+          'width': 3.5,
           'line-color': 'data(color)',
           'target-arrow-color': 'data(color)',
           'target-arrow-shape': 'vee',
