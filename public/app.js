@@ -291,10 +291,10 @@ import { Graph } from './graph.js';
           'text-valign': 'center',
           'text-halign': 'center',
           'color': 'data(textColor)',
-          'font-size': '18px',
+          'font-size': '16px',
           'font-weight': 'bold',
           'font-family': 'Open Sans, -apple-system, BlinkMacSystemFont, sans-serif',
-          'border-width': 3,
+          'border-width': 4,
           'border-opacity': 1,
           'background-color': 'data(fillColor)',
           'border-color': 'data(borderColor)',
@@ -312,7 +312,7 @@ import { Graph } from './graph.js';
           'shape': 'diamond',
           'label': '',
           'background-opacity': 0,
-          'border-width': 3,
+          'border-width': 4,
           'border-color': 'data(borderColor)',
           'transition-property': 'border-color',
           'transition-duration': '0.3s',
@@ -346,7 +346,7 @@ import { Graph } from './graph.js';
       {
         selector: 'edge',
         style: {
-          'width': 3.5,
+          'width': 4,
           'line-color': 'data(color)',
           'target-arrow-color': 'data(color)',
           'target-arrow-shape': 'vee',
@@ -627,9 +627,9 @@ import { Graph } from './graph.js';
 
     // Draw progress gauge on canvas
     function drawProgressGauge(ctx) {
-      // Scale gauge relative to canvas size (15% of smaller dimension)
+      // Scale gauge relative to canvas size (20% of smaller dimension for larger screenshot visibility)
       const minDimension = Math.min(ctx.canvas.width, ctx.canvas.height);
-      const gaugeScale = minDimension / 800;
+      const gaugeScale = minDimension / 600;
 
       const size = 120 * gaugeScale;
       // Position offset scales with gauge size for consistency
@@ -680,14 +680,14 @@ import { Graph } from './graph.js';
 
       // Draw approved percentage text
       ctx.fillStyle = '#3b82f6';
-      ctx.font = `700 ${1.5 * 16 * gaugeScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `700 ${1.5 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(`${approvedPercent}%`, centerX, centerY - 6 * gaugeScale);
 
       // Draw pending percentage text
       ctx.fillStyle = '#2255d4';
-      ctx.font = `600 ${0.75 * 16 * gaugeScale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `600 ${0.75 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.fillText(`${pendingPercent}%`, centerX, centerY + 12 * gaugeScale);
     }
 
@@ -702,7 +702,7 @@ import { Graph } from './graph.js';
       const x = ctx.canvas.width / 2;
       const y = 20 * wmScale;
 
-      ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.font = `600 ${fontSize}px "Open Sans", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
 
