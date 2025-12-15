@@ -280,10 +280,10 @@ class AbstractNode {
 
   /**
    * Gets the availability status of the node based on its prerequisites.
-   * @param {Array<string>} [subjects=[]] - Subgroup of subjects to consider. If empty, consider all.
+   * @param {Set<string>} [subjectIds=new Set()] - Subgroup of subjects to consider. If empty, consider all.
    * @returns {Availability}
    */
-  getAvailability(subjects = []) {
+  getAvailability(subjectIds = new Set()) {
     throw new Error('Method getAvailability() must be implemented in subclasses');
   }
 
@@ -302,10 +302,10 @@ class AbstractNode {
   }
 
   /**
-   * Gets all subjects this node depends on.
-   * @returns {Set<Subject>}
+   * Gets all subject ids this node depends on.
+   * @returns {Set<string>}
    */
-  getAllSubjects(visited = new Set()) {
+  getAllSubjectIds(visited = new Set()) {
     if (visited.has(this)) {
       return new Set();
     }
@@ -315,10 +315,10 @@ class AbstractNode {
     const result = new Set();
 
     this.#dependencies
-      .forEach(link => link.from.getAllSubjects(visited)
+      .forEach(link => link.from.getAllSubjectIds(visited)
       .forEach(subj => result.add(subj)));
 
-      return result;
+    return result;
   }
 }
 
@@ -392,17 +392,17 @@ class SubjectNode extends AbstractNode {
 
   /**
    * Gets the availability status of the node based on its prerequisites.
-   * @param {Array<string>} [subjects=[]] - Subgroup of subjects to consider. If empty, consider all.
+   * @param {Set<string>} [subjectIds=new Set()] - Subgroup of subjects to consider. If empty, consider all.
    * @returns {Availability}
    */
-  getAvailability(subjects = Array.from(this.getAllSubjects()).map(s => s.id)) {
+  getAvailability(subjectIds = this.getAllSubjectIds()) {
     let last = this.#config.availabilities[0];
 
     for (const a of this.#config.availabilities) {
       const isSatisfied = this.#data.prerequisites
         .filter(p => p.availabilityId === a.id)
         .every(p => p.dependencies.every(d => d.subjects
-          .filter(subjectId => subjects.includes(subjectId))
+          .filter(subjectId => subjectIds.has(subjectId))
           .every(subjectId => this.satisfies(subjectId, d.statusId))
         ));
 
@@ -431,10 +431,10 @@ class SubjectNode extends AbstractNode {
   }
 
   /**
-   * @returns {Set<Subject>}
+   * @returns {Set<string>}
    */
-  getAllSubjects(visited = new Set()) {
-    return super.getAllSubjects(visited).add(this.#data);
+  getAllSubjectIds(visited = new Set()) {
+    return super.getAllSubjectIds(visited).add(this.#data.id);
   }
 }
 
@@ -509,12 +509,12 @@ class EdgeNode extends AbstractNode {
 
   /**
    * Gets the availability status of the node based on its prerequisites.
-   * @param {Array<string>} [subjects=[]] - Subgroup of subjects to consider. If empty, consider all.
+   * @param {Set<string>} [subjectIds=new Set()] - Subgroup of subjects to consider. If empty, consider all.
    * @returns {Availability}
    */
-  getAvailability(subjects = Array.from(this.getAllSubjects()).map(s => s.id)) {
+  getAvailability(subjectIds = this.getAllSubjectIds()) {
     const targetAvailabilities = this.#targets
-      .map(t => t.getAvailability(subjects))
+      .map(t => t.getAvailability(subjectIds))
       .map(a => this.#config.availabilities.indexOf(a));
 
     return this.#config.availabilities[Math.min(...targetAvailabilities)];
@@ -565,10 +565,10 @@ class Link {
   /**
    * Get the availability that the source contributes to the target.
    * Arrow color reflects what the source provides, not the target's overall availability.
-   * @param {Array<string>} [subjects=[]] - Subgroup of subjects to consider. If empty, consider all.
+   * @param {Set<string>} [subjects=new Set()] - Subgroup of subjects to consider. If empty, consider all.
    * @returns {Availability}
    */
-  getAvailability(subjects = Array.from(this.from.getAllSubjects()).map(s => s.id)) {
+  getAvailability(subjects = this.from.getAllSubjectIds()) {
     return this.#to.getAvailability(subjects);
   }
 }
