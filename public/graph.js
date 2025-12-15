@@ -200,7 +200,7 @@ class AbstractNode {
    * @returns {Link}
    */
   addDependency(node) {
-    const link = new Link(this.#config, node, this);
+    const link = new Link(node, this);
     this.#dependencies.add(link);
     return link;
   }
@@ -256,7 +256,8 @@ class AbstractNode {
     if (this === node) return true;
     if (visited.has(this)) return false;
     visited.add(this);
-    return Array.from(this.#dependencies).some(link => link.from.#dependsOn(node, visited));
+    return Array.from(this.#dependencies)
+      .some(link => link.from.#dependsOn(node, visited));
   }
 
   /**
@@ -514,7 +515,7 @@ class EdgeNode extends AbstractNode {
    */
   getAvailability(subjectIds = this.getAllSubjectIds()) {
     const targetAvailabilities = this.#targets
-      .map(t => t.getAvailability(subjectIds))
+      .map(t => t.to.getAvailability(subjectIds))
       .map(a => this.#config.availabilities.indexOf(a));
 
     return this.#config.availabilities[Math.min(...targetAvailabilities)];
@@ -522,26 +523,21 @@ class EdgeNode extends AbstractNode {
 }
 
 class Link {
-  /** @type {Config} */
-  #config;
-
   /** @type {AbstractNode} */
   from;
 
   /** @type {AbstractNode} */
-  #to;
+  to;
 
   /**
    * Creates a link between two nodes.
    * The drawn arrow points from 'from' dependency to 'to' target.
-   * @param {Config} config
    * @param {AbstractNode} from
    * @param {AbstractNode} to
    */
-  constructor(config, from, to) {
-    this.#config = config;
+  constructor(from, to) {
     this.from = from;
-    this.#to = to;
+    this.to = to;
   }
 
   /**
@@ -549,26 +545,11 @@ class Link {
    * @param {Drawer} drawer
    */
   render(drawer) {
-    if (!this.from.id || !this.#to.id) {
-      console.warn('Cannot render link: missing fromId or toId.', { fromId: this.from.id, toId: this.#to.id });
-      return;
-    }
-
     drawer.drawArrow({
-      id: `${this.from.id}-${this.#to.id}`,
+      id: `${this.from.id}-${this.to.id}`,
       from: this.from.id,
-      to: this.#to.id,
-      color: this.getAvailability().color,
+      to: this.to.id,
+      color: this.to.getAvailability(this.from.getAllSubjectIds()).color,
     });
-  }
-
-  /**
-   * Get the availability that the source contributes to the target.
-   * Arrow color reflects what the source provides, not the target's overall availability.
-   * @param {Set<string>} [subjects=new Set()] - Subgroup of subjects to consider. If empty, consider all.
-   * @returns {Availability}
-   */
-  getAvailability(subjects = this.from.getAllSubjectIds()) {
-    return this.#to.getAvailability(subjects);
   }
 }
