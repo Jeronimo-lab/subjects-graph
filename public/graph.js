@@ -41,6 +41,8 @@
  * @property {StatusId} id
  * @property {string} name
  * @property {string} color
+ * @property {string} textColor
+ * @property {string} [leafTextColor]
  *
  * @typedef {string} StatusId
  *
@@ -390,7 +392,7 @@ class SubjectNode extends AbstractNode {
       position: this.#data.position,
       fillColor: status.color,
       borderColor: this.getAvailability().color,
-      textColor: isLastStatus ? '#0D1117' : this.#isLeaf ? '#FFD700' : '#FFFFFF',
+      textColor: this.#isLeaf ? status.leafTextColor ?? status.textColor : status.textColor,
     });
   }
 

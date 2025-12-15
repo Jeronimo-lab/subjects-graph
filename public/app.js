@@ -262,7 +262,12 @@ import { Graph } from './graph.js';
 
     // Set up config with resolved CSS colors
     config = {
-      statuses: variantData.statuses.map(s => ({ ...s, color: resolveCssColor(s.color) })),
+      statuses: variantData.statuses.map(s => ({
+        ...s,
+        color: resolveCssColor(s.color),
+        textColor: resolveCssColor(s.textColor),
+        leafTextColor: s.leafTextColor ? resolveCssColor(s.leafTextColor) : null,
+      })),
       availabilities: variantData.availabilities.map(a => ({ ...a, color: resolveCssColor(a.color) })),
     };
 

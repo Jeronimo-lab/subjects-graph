@@ -4,14 +4,10 @@
     "frba-k08": {
       "name": "UTN FRBA - Ingeniería en Sistemas de Información - Plan K08",
       "statuses": [
-        { "id": "PENDING", "name": "Pendiente", "color": "--fill-color-1" },
-        { "id": "IN_PROGRESS", "name": "En curso", "color": "--fill-color-2" },
-        {
-          "id": "FINAL_EXAM_PENDING",
-          "name": "Cursada",
-          "color": "--fill-color-3"
-        },
-        { "id": "APPROVED", "name": "Aprobada", "color": "--fill-color-4" }
+        { "id": "PENDING", "name": "Pendiente", "color": "--fill-color-1", "textColor": "--text-primary", "leafTextColor": "--accent-color" },
+        { "id": "IN_PROGRESS", "name": "En curso", "color": "--fill-color-2", "textColor": "--text-primary", "leafTextColor": "--accent-color" },
+        { "id": "FINAL_EXAM_PENDING", "name": "Cursada", "color": "--fill-color-3", "textColor": "--text-primary" },
+        { "id": "APPROVED", "name": "Aprobada", "color": "--fill-color-4", "textColor": "--bg-primary" }
       ],
       "availabilities": [
         {
@@ -737,14 +733,10 @@
     "frba-k23": {
       "name": "UTN FRBA - Ingeniería en Sistemas de Información - Plan K23",
       "statuses": [
-        { "id": "PENDING", "name": "Pendiente", "color": "--fill-color-1" },
-        { "id": "IN_PROGRESS", "name": "En curso", "color": "--fill-color-2" },
-        {
-          "id": "FINAL_EXAM_PENDING",
-          "name": "Cursada",
-          "color": "--fill-color-3"
-        },
-        { "id": "APPROVED", "name": "Aprobada", "color": "--fill-color-4" }
+        { "id": "PENDING", "name": "Pendiente", "color": "--fill-color-1", "textColor": "--text-primary", "leafTextColor": "--accent-color" },
+        { "id": "IN_PROGRESS", "name": "En curso", "color": "--fill-color-2", "textColor": "--text-primary", "leafTextColor": "--accent-color" },
+        { "id": "FINAL_EXAM_PENDING", "name": "Cursada", "color": "--fill-color-3", "textColor": "--text-primary" },
+        { "id": "APPROVED", "name": "Aprobada", "color": "--fill-color-4", "textColor": "--bg-primary" }
       ],
       "availabilities": [
         {

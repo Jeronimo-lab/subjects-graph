@@ -96,16 +96,15 @@ export const statusColor = (statusId) => config.statuses.find(s => s.id === stat
 export const availabilityColor = (availId) => config.availabilities.find(a => a.id === availId)?.color ?? '';
 
 /**
- * Helper to get text color based on leaf status
+ * Helper to get text color based on status and leaf status
  * @param {StatusId} statusId
  * @param {boolean} isLeaf
  * @returns {string}
  */
-export const textColor = (statusId, isLeaf) => (
-  statusId === 'APPROVED' ? '#0D1117'
-    : isLeaf ? '#FFD700'
-    : '#FFFFFF'
-);
+export const textColor = (statusId, isLeaf) => {
+  const status = config.statuses.find(s => s.id === statusId);
+  return status ? (isLeaf ? (status.leafTextColor ?? status.textColor) : status.textColor) : '';
+};
 
 // Export full variant data for comprehensive tests
 export const fullVariant = {
