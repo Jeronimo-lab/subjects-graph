@@ -38,24 +38,24 @@ describe('Full graph with all PENDING subjects', () => {
     const drawer = createMockDrawer();
     graph.render(drawer);
 
-    // F2 -> TdC chain (through link19, link20, link21, link22)
-    const f2Arrow = drawer.shapes.arrows.find(a => a.id === 'F2-link19');
-    expect(f2Arrow, 'F2-link19 arrow should exist').toBeDefined();
+    // F2 -> TdC chain (through 4 links)
+    const f2Arrow = drawer.shapes.arrows.find(a => a.id === '11-F2:TdC:1');
+    expect(f2Arrow, 'F2-link1 arrow should exist').toBeDefined();
     expect(f2Arrow?.color).toBe(availabilityColor('NOT_AVAILABLE'));
 
-    const link22Arrow = drawer.shapes.arrows.find(a => a.id === 'link22-TdC');
-    expect(link22Arrow, 'link22-TdC arrow should exist').toBeDefined();
-    expect(link22Arrow?.color).toBe(availabilityColor('NOT_AVAILABLE'));
+    const tdcArrow = drawer.shapes.arrows.find(a => a.id === 'F2:TdC:4-30');
+    expect(tdcArrow, 'link4-TdC arrow should exist').toBeDefined();
+    expect(tdcArrow?.color).toBe(availabilityColor('NOT_AVAILABLE'));
 
     // I1 -> AdR (direct or through edges)
-    const i1Arrows = drawer.shapes.arrows.filter(a => a.id.startsWith('I1-'));
+    const i1Arrows = drawer.shapes.arrows.filter(a => a.id.startsWith('8-'));
     expect(i1Arrows.length).toBeGreaterThan(0);
     i1Arrows.forEach(arrow => {
       expect(arrow.color, `Arrow ${arrow.id} should be PENDING`).toBe(availabilityColor('NOT_AVAILABLE'));
     });
 
     // DDS -> IA (direct or through edges)
-    const ddsArrows = drawer.shapes.arrows.filter(a => a.id.startsWith('DDS-'));
+    const ddsArrows = drawer.shapes.arrows.filter(a => a.id.startsWith('18-'));
     expect(ddsArrows.length).toBeGreaterThan(0);
     ddsArrows.forEach(arrow => {
       expect(arrow.color, `Arrow ${arrow.id} should be PENDING`).toBe(availabilityColor('NOT_AVAILABLE'));

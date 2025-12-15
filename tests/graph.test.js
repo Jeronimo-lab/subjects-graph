@@ -25,8 +25,8 @@ describe('Graph rendering (F1 -> F2)', () => {
   testCases.forEach(({ statuses: [f1Status, f2Status], availabilities: [f1Avail, f2Avail], arrowAvailability }) => {
     it(`renders with F1=${f1Status}, F2=${f2Status}`, () => {
       const testSubjects = subjects(
-        ['F1', f1Status],
-        ['F2', f2Status],
+        ['7', f1Status],
+        ['11', f2Status],
       );
 
       const graph = new Graph(config, testSubjects, []);
@@ -36,7 +36,7 @@ describe('Graph rendering (F1 -> F2)', () => {
       // Should draw 2 circles (one per subject)
       expect(drawer.shapes.circles).toHaveLength(2);
       expect(drawer.shapes.circles).toContainEqual({
-        id: 'F1',
+        id: '7',
         label: 'F1',
         tooltip: 'Física I',
         position: { x: 900, y: 500 },
@@ -45,7 +45,7 @@ describe('Graph rendering (F1 -> F2)', () => {
         textColor: textColor(false),
       });
       expect(drawer.shapes.circles).toContainEqual({
-        id: 'F2',
+        id: '11',
         label: 'F2',
         tooltip: 'Física II',
         position: { x: 800, y: 500 },
@@ -57,9 +57,9 @@ describe('Graph rendering (F1 -> F2)', () => {
       // Should draw 1 arrow from F1 to F2
       expect(drawer.shapes.arrows).toHaveLength(1);
       expect(drawer.shapes.arrows).toContainEqual({
-        id: 'F1-F2',
-        from: 'F1',
-        to: 'F2',
+        id: '7-11',
+        from: '7',
+        to: '11',
         color: availabilityColor(arrowAvailability),
       });
     });
@@ -93,9 +93,9 @@ describe('Graph rendering (Q, F2 -> TdC)', () => {
   testCases.forEach(({ statuses: [f2Status, qStatus], arrowAvailability }) => {
     it(`renders with F2=${f2Status}, Q=${qStatus}`, () => {
       const testSubjects = subjects(
-        ['Q', qStatus],
-        ['F2', f2Status],
-        ['TdC', 'PENDING'],
+        ['9', qStatus],
+        ['11', f2Status],
+        ['30', 'PENDING'],
       );
 
       const graph = new Graph(config, testSubjects, []);
@@ -103,7 +103,7 @@ describe('Graph rendering (Q, F2 -> TdC)', () => {
       graph.render(drawer);
 
       // F2 -> TdC arrow should reflect F2's contribution
-      const f2Arrow = drawer.shapes.arrows.find(a => a.id === 'F2-TdC');
+      const f2Arrow = drawer.shapes.arrows.find(a => a.id === '11-30');
       expect(f2Arrow).toBeDefined();
       expect(f2Arrow?.color).toBe(availabilityColor(arrowAvailability));
     });
@@ -156,9 +156,9 @@ describe('Transitive deduplication', () => {
   testCases.forEach(({ statuses: [ayedStatus, pdpStatus, ddsStatus], availabilities: [ayedAvail, pdpAvail, ddsAvail], arrowAvailabilities }) => {
     it(`deduplicates with AyED=${ayedStatus}, PdP=${pdpStatus}, DDS=${ddsStatus}`, () => {
       const testSubjects = subjects(
-        ['AyED', ayedStatus],
-        ['PdP', pdpStatus],
-        ['DDS', ddsStatus],
+        ['5', ayedStatus],
+        ['14', pdpStatus],
+        ['18', ddsStatus],
       );
 
       const graph = new Graph(config, testSubjects, []);
@@ -168,7 +168,7 @@ describe('Transitive deduplication', () => {
       // Should draw 3 circles with correct colors
       expect(drawer.shapes.circles).toHaveLength(3);
       expect(drawer.shapes.circles).toContainEqual({
-        id: 'AyED',
+        id: '5',
         label: 'AyED',
         tooltip: 'Algoritmos y Estructuras de Datos',
         position: { x: 100, y: 400 },
@@ -177,7 +177,7 @@ describe('Transitive deduplication', () => {
         textColor: textColor(false),
       });
       expect(drawer.shapes.circles).toContainEqual({
-        id: 'PdP',
+        id: '14',
         label: 'PdP',
         tooltip: 'Paradigmas de Programación',
         position: { x: 200, y: 400 },
@@ -186,7 +186,7 @@ describe('Transitive deduplication', () => {
         textColor: textColor(false),
       });
       expect(drawer.shapes.circles).toContainEqual({
-        id: 'DDS',
+        id: '18',
         label: 'DDS',
         tooltip: 'Diseño de Sistemas',
         position: { x: 400, y: 300 },
@@ -198,15 +198,15 @@ describe('Transitive deduplication', () => {
       // Should draw 2 arrows with correct colors (NOT AyED -> DDS)
       expect(drawer.shapes.arrows).toHaveLength(2);
       expect(drawer.shapes.arrows).toContainEqual({
-        id: 'AyED-PdP',
-        from: 'AyED',
-        to: 'PdP',
+        id: '5-14',
+        from: '5',
+        to: '14',
         color: availabilityColor(arrowAvailabilities['AyED-PdP']),
       });
       expect(drawer.shapes.arrows).toContainEqual({
-        id: 'PdP-DDS',
-        from: 'PdP',
-        to: 'DDS',
+        id: '14-18',
+        from: '14',
+        to: '18',
         color: availabilityColor(arrowAvailabilities['PdP-DDS']),
       });
     });
@@ -215,36 +215,36 @@ describe('Transitive deduplication', () => {
 
 describe('Edge nodes', () => {
   describe('Many to many nodes (AGA + AM1 -> AM2, PyE)', () => {
-    // link3 connects AGA + AM1 to AM2 and PyE (two targets)
+    // link connects AGA + AM1 to AM2 and PyE (two targets)
     // Both AM2 and PyE need AGA and AM1 (FINAL_EXAM_PENDING for FEP, APPROVED for APPROVED)
     // All 9 combinations (3x3) for AGA and AM1 statuses
     const testCases = [
       // Both PENDING -> edge NOT_AVAILABLE, targets NOT_AVAILABLE
-      { statuses: ['PENDING', 'PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'NOT_AVAILABLE', 'AM1-link3': 'NOT_AVAILABLE', 'link3-AM2': 'NOT_AVAILABLE', 'link3-PyE': 'NOT_AVAILABLE' } },
+      { statuses: ['PENDING', 'PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'NOT_AVAILABLE', 'AM1-link': 'NOT_AVAILABLE', 'link-AM2': 'NOT_AVAILABLE', 'link-PyE': 'NOT_AVAILABLE' } },
       // One FEP, one PENDING -> edge NOT_AVAILABLE
-      { statuses: ['FINAL_EXAM_PENDING', 'PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'ENROLL_AVAILABLE', 'AM1-link3': 'NOT_AVAILABLE', 'link3-AM2': 'NOT_AVAILABLE', 'link3-PyE': 'NOT_AVAILABLE' } },
-      { statuses: ['PENDING', 'FINAL_EXAM_PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'NOT_AVAILABLE', 'AM1-link3': 'ENROLL_AVAILABLE', 'link3-AM2': 'NOT_AVAILABLE', 'link3-PyE': 'NOT_AVAILABLE' } },
+      { statuses: ['FINAL_EXAM_PENDING', 'PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'ENROLL_AVAILABLE', 'AM1-link': 'NOT_AVAILABLE', 'link-AM2': 'NOT_AVAILABLE', 'link-PyE': 'NOT_AVAILABLE' } },
+      { statuses: ['PENDING', 'FINAL_EXAM_PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'NOT_AVAILABLE', 'AM1-link': 'ENROLL_AVAILABLE', 'link-AM2': 'NOT_AVAILABLE', 'link-PyE': 'NOT_AVAILABLE' } },
       // Both FEP -> edge ENROLL_AVAILABLE, targets ENROLL_AVAILABLE
-      { statuses: ['FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'ENROLL_AVAILABLE', 'AM1-link3': 'ENROLL_AVAILABLE', 'link3-AM2': 'ENROLL_AVAILABLE', 'link3-PyE': 'ENROLL_AVAILABLE' } },
+      { statuses: ['FINAL_EXAM_PENDING', 'FINAL_EXAM_PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'ENROLL_AVAILABLE', 'AM1-link': 'ENROLL_AVAILABLE', 'link-AM2': 'ENROLL_AVAILABLE', 'link-PyE': 'ENROLL_AVAILABLE' } },
       // One APPROVED, one PENDING -> edge NOT_AVAILABLE
-      { statuses: ['APPROVED', 'PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_AVAILABLE', 'AM1-link3': 'NOT_AVAILABLE', 'link3-AM2': 'NOT_AVAILABLE', 'link3-PyE': 'NOT_AVAILABLE' } },
-      { statuses: ['PENDING', 'APPROVED', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'NOT_AVAILABLE', 'AM1-link3': 'FINAL_EXAM_AVAILABLE', 'link3-AM2': 'NOT_AVAILABLE', 'link3-PyE': 'NOT_AVAILABLE' } },
+      { statuses: ['APPROVED', 'PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'FINAL_EXAM_AVAILABLE', 'AM1-link': 'NOT_AVAILABLE', 'link-AM2': 'NOT_AVAILABLE', 'link-PyE': 'NOT_AVAILABLE' } },
+      { statuses: ['PENDING', 'APPROVED', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE', 'NOT_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'NOT_AVAILABLE', 'AM1-link': 'FINAL_EXAM_AVAILABLE', 'link-AM2': 'NOT_AVAILABLE', 'link-PyE': 'NOT_AVAILABLE' } },
       // One APPROVED, one FEP -> edge ENROLL_AVAILABLE (minimum)
-      { statuses: ['APPROVED', 'FINAL_EXAM_PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_AVAILABLE', 'AM1-link3': 'ENROLL_AVAILABLE', 'link3-AM2': 'ENROLL_AVAILABLE', 'link3-PyE': 'ENROLL_AVAILABLE' } },
-      { statuses: ['FINAL_EXAM_PENDING', 'APPROVED', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'ENROLL_AVAILABLE', 'AM1-link3': 'FINAL_EXAM_AVAILABLE', 'link3-AM2': 'ENROLL_AVAILABLE', 'link3-PyE': 'ENROLL_AVAILABLE' } },
+      { statuses: ['APPROVED', 'FINAL_EXAM_PENDING', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'FINAL_EXAM_AVAILABLE', 'AM1-link': 'ENROLL_AVAILABLE', 'link-AM2': 'ENROLL_AVAILABLE', 'link-PyE': 'ENROLL_AVAILABLE' } },
+      { statuses: ['FINAL_EXAM_PENDING', 'APPROVED', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE', 'ENROLL_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'ENROLL_AVAILABLE', 'AM1-link': 'FINAL_EXAM_AVAILABLE', 'link-AM2': 'ENROLL_AVAILABLE', 'link-PyE': 'ENROLL_AVAILABLE' } },
       // Both APPROVED -> edge FINAL_EXAM_AVAILABLE, targets FINAL_EXAM_AVAILABLE
-      { statuses: ['APPROVED', 'APPROVED', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE'], arrowAvailabilities: { 'AGA-link3': 'FINAL_EXAM_AVAILABLE', 'AM1-link3': 'FINAL_EXAM_AVAILABLE', 'link3-AM2': 'FINAL_EXAM_AVAILABLE', 'link3-PyE': 'FINAL_EXAM_AVAILABLE' } },
+      { statuses: ['APPROVED', 'APPROVED', 'PENDING', 'PENDING'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE'], arrowAvailabilities: { 'AGA-link': 'FINAL_EXAM_AVAILABLE', 'AM1-link': 'FINAL_EXAM_AVAILABLE', 'link-AM2': 'FINAL_EXAM_AVAILABLE', 'link-PyE': 'FINAL_EXAM_AVAILABLE' } },
     ];
 
-    testCases.forEach(({ statuses: [agaStatus, am1Status, am2Status, pyeStatus], availabilities: [agaAvail, am1Avail, link3Avail, am2Avail, pyeAvail], arrowAvailabilities }) => {
+    testCases.forEach(({ statuses: [agaStatus, am1Status, am2Status, pyeStatus], availabilities: [agaAvail, am1Avail, linkAvail, am2Avail, pyeAvail], arrowAvailabilities }) => {
       it(`renders with AGA=${agaStatus}, AM1=${am1Status}`, () => {
         const testSubjects = subjects(
-          ['AGA', agaStatus],
-          ['AM1', am1Status],
-          ['AM2', am2Status],
-          ['PyE', pyeStatus],
+          ['2', agaStatus],
+          ['1', am1Status],
+          ['10', am2Status],
+          ['17', pyeStatus],
         );
-        const testEdges = edges(['link3'], ['AGA', 'AM1', 'AM2', 'PyE']);
+        const testEdges = edges(['AM1,AGA:AM2,PyE'], ['2', '1', '10', '17']);
 
         const graph = new Graph(config, testSubjects, testEdges);
         const drawer = createMockDrawer();
@@ -256,43 +256,43 @@ describe('Edge nodes', () => {
 
         // Check edge node border
         expect(drawer.shapes.diamonds).toContainEqual({
-          id: 'link3',
+          id: 'AM1,AGA:AM2,PyE',
           position: { x: 900, y: 200 },
-          borderColor: availabilityColor(link3Avail),
+          borderColor: availabilityColor(linkAvail),
         });
 
-        // Should draw 4 arrows: AGA->link3, AM1->link3, link3->AM2, link3->PyE
+        // Should draw 4 arrows: AGA->link, AM1->link, link->AM2, link->PyE
         expect(drawer.shapes.arrows).toHaveLength(4);
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'AGA-link3',
-          from: 'AGA',
-          to: 'link3',
-          color: availabilityColor(arrowAvailabilities['AGA-link3']),
+          id: '2-AM1,AGA:AM2,PyE',
+          from: '2',
+          to: 'AM1,AGA:AM2,PyE',
+          color: availabilityColor(arrowAvailabilities['AGA-link']),
         });
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'AM1-link3',
-          from: 'AM1',
-          to: 'link3',
-          color: availabilityColor(arrowAvailabilities['AM1-link3']),
+          id: '1-AM1,AGA:AM2,PyE',
+          from: '1',
+          to: 'AM1,AGA:AM2,PyE',
+          color: availabilityColor(arrowAvailabilities['AM1-link']),
         });
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'link3-AM2',
-          from: 'link3',
-          to: 'AM2',
-          color: availabilityColor(arrowAvailabilities['link3-AM2']),
+          id: 'AM1,AGA:AM2,PyE-10',
+          from: 'AM1,AGA:AM2,PyE',
+          to: '10',
+          color: availabilityColor(arrowAvailabilities['link-AM2']),
         });
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'link3-PyE',
-          from: 'link3',
-          to: 'PyE',
-          color: availabilityColor(arrowAvailabilities['link3-PyE']),
+          id: 'AM1,AGA:AM2,PyE-17',
+          from: 'AM1,AGA:AM2,PyE',
+          to: '17',
+          color: availabilityColor(arrowAvailabilities['link-PyE']),
         });
       });
     });
   });
 
   describe('Many to one node (AyED + MD -> SO) and unrelated link (AdC -> SO)', () => {
-    // link8 connects AyED + MD to SO
+    // link connects AyED + MD to SO
     // SO also depends on AdC (unrelated)
     // All 9 combinations (3x3) for AyED and MD statuses
     const testCases = [
@@ -337,15 +337,15 @@ describe('Edge nodes', () => {
       { statuses: ['APPROVED', 'APPROVED', 'APPROVED', 'APPROVED'], availabilities: ['FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE', 'FINAL_EXAM_AVAILABLE'] },
     ];
 
-    testCases.forEach(({ statuses: [ayedStatus, mdStatus, adcStatus, soStatus], availabilities: [edgeAvailability, ayedArrow, mdArrow, link8SoArrow, adCSoArrow, soAvailability] }) => {
+    testCases.forEach(({ statuses: [ayedStatus, mdStatus, adcStatus, soStatus], availabilities: [edgeAvailability, ayedArrow, mdArrow, linkSoArrow, adCSoArrow, soAvailability] }) => {
       it(`renders with AyED=${ayedStatus}, MD=${mdStatus}, AdC=${adcStatus}`, () => {
         const testSubjects = subjects(
-          ['AyED', ayedStatus],
-          ['MD', mdStatus],
-          ['AdC', adcStatus],
-          ['SO', soStatus],
+          ['5', ayedStatus],
+          ['3', mdStatus],
+          ['6', adcStatus],
+          ['15', soStatus],
         );
-        const testEdges = edges(['link8'], ['AyED', 'MD', 'AdC', 'SO']);
+        const testEdges = edges(['MD,AyED:SSL,PdP,SO'], ['5', '3', '6', '15']);
 
         const graph = new Graph(config, testSubjects, testEdges);
         const drawer = createMockDrawer();
@@ -357,7 +357,7 @@ describe('Edge nodes', () => {
 
         // Check edge node border
         expect(drawer.shapes.diamonds).toContainEqual({
-          id: 'link8',
+          id: 'MD,AyED:SSL,PdP,SO',
           position: { x: 100, y: 500 },
           borderColor: availabilityColor(edgeAvailability),
         });
@@ -365,27 +365,27 @@ describe('Edge nodes', () => {
         // Should draw 4 arrows: AyED->link8, MD->link8, link8->SO, AdC->SO
         expect(drawer.shapes.arrows).toHaveLength(4);
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'AyED-link8',
-          from: 'AyED',
-          to: 'link8',
+          id: '5-MD,AyED:SSL,PdP,SO',
+          from: '5',
+          to: 'MD,AyED:SSL,PdP,SO',
           color: availabilityColor(ayedArrow),
         });
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'MD-link8',
-          from: 'MD',
-          to: 'link8',
+          id: '3-MD,AyED:SSL,PdP,SO',
+          from: '3',
+          to: 'MD,AyED:SSL,PdP,SO',
           color: availabilityColor(mdArrow),
         });
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'link8-SO',
-          from: 'link8',
-          to: 'SO',
-          color: availabilityColor(link8SoArrow),
+          id: 'MD,AyED:SSL,PdP,SO-15',
+          from: 'MD,AyED:SSL,PdP,SO',
+          to: '15',
+          color: availabilityColor(linkSoArrow),
         });
         expect(drawer.shapes.arrows).toContainEqual({
-          id: 'AdC-SO',
-          from: 'AdC',
-          to: 'SO',
+          id: '6-15',
+          from: '6',
+          to: '15',
           color: availabilityColor(adCSoArrow),
         });
 
@@ -397,16 +397,16 @@ describe('Edge nodes', () => {
     });
   });
 
-  describe('Invisible edge nodes (F2 -> link19 -> link20 -> link21 -> link22 -> TdC)', () => {
+  describe('Invisible edge nodes (11 -> link -> link -> link -> link -> TdC)', () => {
     // Chain of 1:1 edge nodes that should use drawEdge (invisible) instead of drawDiamond
-    // F2 -> link19 -> link20 -> link21 -> link22 -> TdC
+    // F2 -> link -> link -> link -> link -> TdC
     // Focus: edge nodes use drawEdge (not drawDiamond) and arrows connect through chain
     it('uses drawEdge for 1:1 edge nodes and draws arrows through chain', () => {
       const testSubjects = subjects(
-        ['F2', 'APPROVED'],
-        ['TdC', 'PENDING'],
+        ['11', 'APPROVED'],
+        ['30', 'PENDING'],
       );
-      const testEdges = edges(['link19', 'link20', 'link21', 'link22'], ['F2', 'TdC']);
+      const testEdges = edges(['F2:TdC:1', 'F2:TdC:2', 'F2:TdC:3', 'F2:TdC:4'], ['11', '30']);
 
       const graph = new Graph(config, testSubjects, testEdges);
       const drawer = createMockDrawer();
@@ -420,7 +420,7 @@ describe('Edge nodes', () => {
       // Should draw 5 arrows through the chain
       expect(drawer.shapes.arrows).toHaveLength(5);
       expect(drawer.shapes.arrows.map(a => a.id)).toEqual(
-        expect.arrayContaining(['F2-link19', 'link19-link20', 'link20-link21', 'link21-link22', 'link22-TdC'])
+        expect.arrayContaining(['11-F2:TdC:1', 'F2:TdC:1-F2:TdC:2', 'F2:TdC:2-F2:TdC:3', 'F2:TdC:3-F2:TdC:4', 'F2:TdC:4-30'])
       );
     });
   });
