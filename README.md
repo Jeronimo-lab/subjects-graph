@@ -1,6 +1,6 @@
 # Grafo de Materias
 
-Aplicación web interactiva para visualizar dependencias de materias universitarias como un grafo
+Aplicación web interactiva para visualizar correlativas de materias universitarias como un grafo
 dirigido.
 
 ![Graph Visualization](https://img.shields.io/badge/Graph-Cytoscape.js-blue)
@@ -114,8 +114,8 @@ en estado "Cursada" y tanto "Análisis y Diseño de Sistemas" como "Sistemas y O
 "Apobadas".
 
 Las correlativas se evalúan en orden, es decir que para que "Economía" esté disponible para rendir
-final es necesario cumplir con todas las correlativas anteriores y además tener "Análisis de
-Sistemas" aprobada.
+final es necesario cumplir con todos los requisitos anteriores y además tener "Análisis de Sistemas"
+aprobada.
 
 ### Conectores
 
