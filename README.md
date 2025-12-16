@@ -110,8 +110,8 @@ Ejemplo de una materia con correlativas:
 ```
 
 Esto indica que la materia "Economía" estará disponible para cursar si "Análisis de Sistemas" está
-en estado "Cursada" y tanto "Análisis y Diseño de Sistemas" como "Sistemas y Organizaciones" están
-"Apobadas".
+en estado "Cursada" y tanto "Algoritmos y Estructuras de Datos" como "Sistemas y Organizaciones"
+están "Apobadas".
 
 Las correlativas se evalúan en orden, es decir que para que "Economía" esté disponible para rendir
 final es necesario cumplir con todos los requisitos anteriores y además tener "Análisis de Sistemas"
@@ -143,6 +143,9 @@ Ejemplo:
 { "id": "F2:TdC:1", "dependencies": ["F2"], "targets": ["F2:TdC:2"], ... },
 { "id": "F2:TdC:2", "dependencies": ["F2:TdC:1"], "targets": ["30"], ... }
 ```
+
+> Los conectores que solamente tengan un origen y un destino se renderizan como
+> **nodos invisibles**.
 
 ## Tech Stack
 
