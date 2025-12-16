@@ -74,6 +74,7 @@
  * @typedef {object} Circle
  * @property {string} id
  * @property {string} label
+ * @property {StatusId} status
  * @property {string} tooltip
  * @property {Position} position
  * @property {string} fillColor
@@ -167,6 +168,14 @@ export class Graph {
     for (const node of this.#nodes.values()) {
       node.renderLinks(drawer);
     }
+  }
+
+  /**
+   * Toggle the status of a node by id (if supported).
+   * @param {string} id
+   */
+  toggleStatus(id) {
+    this.getNodeById(id)?.toggleStatus();
   }
 }
 
@@ -324,6 +333,11 @@ class AbstractNode {
 
     return result;
   }
+
+  /**
+   * Toggle the status of this node (default: no-op).
+   */
+  toggleStatus() {}
 }
 
 class SubjectNode extends AbstractNode {
@@ -384,12 +398,12 @@ class SubjectNode extends AbstractNode {
   renderNode(drawer) {
     const statusIndex = this.#config.statuses.findIndex(s => s.id === this.#data.status);
     const status = this.#config.statuses[statusIndex] ?? this.#config.statuses[0];
-    const isLastStatus = statusIndex === this.#config.statuses.length - 1;
     drawer.drawCircle({
       id: this.#data.id,
       label: this.#data.shortName,
       tooltip: this.#data.name,
       position: this.#data.position,
+      status: status.id,
       fillColor: status.color,
       borderColor: this.getAvailability().color,
       textColor: this.#isLeaf ? status.leafTextColor ?? status.textColor : status.textColor,
@@ -441,6 +455,15 @@ class SubjectNode extends AbstractNode {
    */
   getAllSubjectIds(visited = new Set()) {
     return super.getAllSubjectIds(visited).add(this.#data.id);
+  }
+
+  /**
+   * Toggle the status of this subject node.
+   */
+  toggleStatus() {
+    const currentIndex = this.#config.statuses.findIndex(s => s.id === this.#data.status);
+    const nextIndex = (currentIndex + 1) % this.#config.statuses.length;
+    this.#data.status = this.#config.statuses[nextIndex].id;
   }
 }
 

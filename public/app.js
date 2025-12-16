@@ -1,174 +1,297 @@
-// Main Application
-import { Graph } from './graph.js';
+import cytoscape from 'https://unpkg.com/cytoscape@3.33.1/dist/cytoscape.esm.mjs';
+import { Graph } from "./graph.js";
 
-(function() {
-  'use strict';
+class CytoscapeDrawer {
+  constructor() {
+    this.nodes = [];
+    this.edges = [];
+    this.positions = new Set();
+  }
+  drawCircle({ id, label, tooltip, position: { x, y }, fillColor, borderColor, textColor, status }) {
+    this.nodes.push({
+      data: {
+        id,
+        label,
+        name: tooltip,
+        nodeType: 'subject',
+        status,
+        fillColor,
+        borderColor,
+        textColor,
+      },
+      position: { x, y },
+      locked: true,
+    });
+    this.#addPosition({ x, y });
+  }
+  drawDiamond({ id, position: { x, y }, borderColor }) {
+    this.nodes.push({
+      data: {
+        id,
+        nodeType: 'connector',
+        isInvisible: false,
+        borderColor,
+      },
+      position: { x, y },
+      locked: true,
+    });
+    this.#addPosition({ x, y });
+  }
+  drawEdge({ id, position: { x, y } }) {
+    this.nodes.push({
+      data: {
+        id,
+        nodeType: 'connector',
+        isInvisible: true,
+        withGap: this.#hasPosition({ x, y }),
+        borderColor: '#FFFFFF',
+      },
+      position: { x, y },
+      locked: true,
+    });
+    this.#addPosition({ x, y });
+  }
+  drawArrow({ id, from, to, color }) {
+    const fromNode = this.nodes.find(n => n.data.id === from);
+    if (!fromNode) {
+      console.warn(`Edge ${id} has invalid from node ${from}`);
+      return;
+    }
+    const toNode = this.nodes.find(n => n.data.id === to);
+    if (!toNode) {
+      console.warn(`Edge ${id} has invalid to node ${to}`);
+      return;
+    }
+    this.edges.push({
+      data: {
+        id,
+        source: from,
+        target: to,
+        toInvisible: toNode.data.isInvisible ?? false,
+        color,
+      },
+    });
+  }
+  getElements() {
+    return { nodes: this.nodes, edges: this.edges };
+  }
+  #addPosition({ x, y }) {
+    this.positions.add(`${x},${y}`);
+  }
+  #hasPosition({ x, y }) {
+    return this.positions.has(`${x},${y}`);
+  }
+}
 
-  const VARIANT_STORAGE_KEY = 'selectedVariant';
-  const VARIANT_PARAM = 'variant';
-  const THEME_STORAGE_KEY = 'selectedTheme';
+class GraphApp {
 
-  // State management
-  let cy = null; // Cytoscape instance
-  let graph = null; // Graph instance
-  let appData = null; // Loaded from data.json
-  let currentVariant = null;
-  let currentTheme = null;
-  let config = null; // { statuses, availabilities }
+  constructor() {
+    // DOM element references
+    this.variantSelect = document.getElementById('variant-select');
+    this.themeSelect = document.getElementById('theme-select');
+    this.resetBtn = document.getElementById('reset-btn');
+    this.fitBtn = document.getElementById('fit-btn');
+    this.exportBtn = document.getElementById('export-btn');
+    this.importBtn = document.getElementById('import-btn');
+    this.screenshotBtn = document.getElementById('screenshot-btn');
+    this.statusLegend = document.getElementById('status-legend');
+    this.borderLegend = document.getElementById('border-legend');
+    this.progressPercentage = document.getElementById('progress-percentage');
+    this.progressPendingText = document.getElementById('progress-pending-text');
+    this.legendItems = document.querySelector('.legend-items');
+    this.cyContainer = document.getElementById('cy');
+    this.progressApproved = document.getElementById('progress-approved');
+    this.progressPending = document.getElementById('progress-pending');
 
-  // Color lookup from current theme
-  let themeColors = null;
-
-  // Resolve color variable name to hex value
-  function resolveCssColor(varName) {
-    return themeColors?.[varName] ?? '#000000';
+    // State
+    this.cy = null;
+    this.graph = null;
+    this.appData = null;
+    this.currentVariant = null;
+    this.currentTheme = null;
+    this.config = null;
+    this.themeColors = null;
+    this.VARIANT_STORAGE_KEY = 'selectedVariant';
+    this.VARIANT_PARAM = 'variant';
+    this.THEME_STORAGE_KEY = 'selectedTheme';
   }
 
-  // Apply theme CSS variables to document
-  function applyTheme(theme) {
+  connect() {
+    this.initEventListeners();
+    this.init();
+  }
+
+  initEventListeners() {
+    this.variantSelect.addEventListener('change', this.onVariantChange.bind(this));
+    this.themeSelect.addEventListener('change', this.onThemeChange.bind(this));
+    this.resetBtn.addEventListener('click', this.reset.bind(this));
+    this.fitBtn.addEventListener('click', this.fit.bind(this));
+    this.exportBtn.addEventListener('click', this.export.bind(this));
+    this.importBtn.addEventListener('click', this.import.bind(this));
+    this.screenshotBtn.addEventListener('click', this.screenshot.bind(this));
+    window.addEventListener('beforeinstallprompt', this.onBeforeInstallPrompt.bind(this));
+  }
+
+  async init() {
+    try {
+      const response = await fetch('data.json');
+      this.appData = await response.json();
+    } catch (err) {
+      console.error('Error loading data.json:', err);
+      return;
+    }
+
+    if (this.variantSelect) {
+      this.variantSelect.innerHTML = '';
+      Object.entries(this.appData.variants).forEach(([id, variant]) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = variant.name;
+        this.variantSelect.appendChild(option);
+      });
+
+      const variantInStorage = localStorage.getItem(this.VARIANT_STORAGE_KEY);
+      this.currentVariant = (variantInStorage && this.appData.variants[variantInStorage])
+        ? variantInStorage
+        : this.appData.defaultVariant;
+      this.variantSelect.value = this.currentVariant;
+      this.variantSelect.classList.remove('skeleton');
+      this.variantSelect.style.display = 'block';
+    }
+
+    document.querySelectorAll('.header-skeleton').forEach(el => el.style.display = 'none');
+
+
+    const savedTheme = localStorage.getItem(this.THEME_STORAGE_KEY);
+    this.currentTheme = (savedTheme && window.THEMES[savedTheme])
+      ? savedTheme
+      : window.DEFAULT_THEME;
+
+    const theme = window.THEMES[this.currentTheme];
+    this.themeColors = theme?.colors ?? {};
+
+    if (this.themeSelect) {
+      this.themeSelect.innerHTML = '';
+      Object.entries(window.THEMES).forEach(([id, theme]) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = theme.name;
+        this.themeSelect.appendChild(option);
+      });
+      this.themeSelect.value = this.currentTheme;
+      this.themeSelect.style.display = 'block';
+    }
+
+    const variantData = this.appData.variants[this.currentVariant];
+
+    this.config = {
+      statuses: variantData.statuses.map(s => ({
+        ...s,
+        color: this.resolveCssColor(s.color),
+        textColor: this.resolveCssColor(s.textColor),
+        leafTextColor: s.leafTextColor ? this.resolveCssColor(s.leafTextColor) : null,
+      })),
+      availabilities: variantData.availabilities.map(a => ({ ...a, color: this.resolveCssColor(a.color) })),
+    };
+
+    this.generateLegend();
+
+    if (this.legendItems) {
+      this.legendItems.classList.remove('skeleton');
+    }
+
+    this.renderGraph();
+    this.registerServiceWorker();
+    lucide.createIcons();
+  }
+
+  renderGraph() {
+    const variantData = this.appData.variants[this.currentVariant];
+    this.config = {
+      statuses: variantData.statuses.map(s => ({
+        ...s,
+        color: this.resolveCssColor(s.color),
+        textColor: this.resolveCssColor(s.textColor),
+        leafTextColor: s.leafTextColor ? this.resolveCssColor(s.leafTextColor) : null,
+      })),
+      availabilities: variantData.availabilities.map(a => ({ ...a, color: this.resolveCssColor(a.color) })),
+    };
+    this.generateLegend();
+    const savedStatuses = this.loadStatuses();
+    const defaultStatus = this.config.statuses[0].id;
+    const subjects = variantData.subjects.map(s => ({
+      ...s,
+      status: savedStatuses[s.id] || s.status || defaultStatus,
+    }));
+    this.graph = new Graph(this.config, subjects, variantData.edges);
+    const drawer = new CytoscapeDrawer();
+    this.graph.render(drawer);
+    this.initCytoscape(drawer.getElements());
+  }
+
+  onVariantChange(e) {
+    const newVariant = e.target.value;
+    if (this.appData.variants[newVariant]) {
+      this.currentVariant = newVariant;
+      localStorage.setItem(this.VARIANT_STORAGE_KEY, newVariant);
+      this.renderGraph();
+    }
+  }
+
+  onThemeChange(e) {
+    const newThemeId = e.target.value;
+    const newTheme = window.THEMES[newThemeId];
+    if (newTheme) {
+      this.currentTheme = newThemeId;
+      this.themeColors = newTheme.colors;
+      this.applyTheme(newTheme);
+      localStorage.setItem(this.THEME_STORAGE_KEY, newThemeId);
+      this.renderGraph();
+    }
+  }
+
+  resolveCssColor(varName) {
+    return this.themeColors?.[varName] ?? '#000000';
+  }
+
+  applyTheme(theme) {
     if (!theme?.colors) return;
     const root = document.documentElement;
     Object.entries(theme.colors).forEach(([varName, value]) => {
       root.style.setProperty(varName, value);
     });
-    // Update meta theme-color for mobile browsers
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme && theme.colors['--bg-primary']) {
       metaTheme.content = theme.colors['--bg-primary'];
     }
   }
 
-  // Get storage key for current variant
-  function getStorageKey() {
-    return `graphStatus-${currentVariant}`;
+  getStorageKey() {
+    return `graphStatus-${this.currentVariant}`;
   }
 
-  // Load subject statuses from localStorage
-  function loadStatuses() {
-    const saved = localStorage.getItem(getStorageKey());
+  loadStatuses() {
+    const saved = localStorage.getItem(this.getStorageKey());
     return saved ? JSON.parse(saved) : {};
   }
 
-  // Save subject statuses to localStorage
-  function saveStatuses() {
+  saveStatuses() {
     const statuses = {};
-    const defaultStatus = config.statuses[0].id;
-    cy.nodes('[nodeType="subject"]').forEach(node => {
+    const defaultStatus = this.config.statuses[0].id;
+    this.cy.nodes('[nodeType="subject"]').forEach(node => {
       const status = node.data('status');
       if (status !== defaultStatus) {
         statuses[node.id()] = status;
       }
     });
-    localStorage.setItem(getStorageKey(), JSON.stringify(statuses));
+    localStorage.setItem(this.getStorageKey(), JSON.stringify(statuses));
   }
 
-  // CytoscapeDrawer - implements drawer interface for Graph
-  class CytoscapeDrawer {
-    constructor() {
-      this.nodes = [];
-      this.edges = [];
-      this.positions = new Set();
-    }
-
-    drawCircle({ id, label, tooltip, position: { x, y }, fillColor, borderColor, textColor }) {
-      this.nodes.push({
-        data: {
-          id,
-          label,
-          name: tooltip,
-          nodeType: 'subject',
-          status: this._getStatusIdByColor(fillColor),  // Keep for cycling logic
-          fillColor,
-          borderColor,
-          textColor,
-        },
-        position: { x, y },
-        locked: true,
-      });
-      this.#addPosition({ x, y });
-    }
-
-    drawDiamond({ id, position: { x, y }, borderColor }) {
-      this.nodes.push({
-        data: {
-          id,
-          nodeType: 'connector',
-          isInvisible: false,
-          borderColor,
-        },
-        position: { x, y },
-        locked: true,
-      });
-      this.#addPosition({ x, y });
-    }
-
-    drawEdge({ id, position: { x, y } }) {
-      this.nodes.push({
-        data: {
-          id,
-          nodeType: 'connector',
-          isInvisible: true,
-          withGap: this.#hasPosition({ x, y }),
-          borderColor: config.availabilities[0].color,
-        },
-        position: { x, y },
-        locked: true,
-      });
-      this.#addPosition({ x, y });
-    }
-
-    drawArrow({ id, from, to, color }) {
-      const fromNode = this.nodes.find(n => n.data.id === from);
-      if (!fromNode) {
-        console.warn(`Edge ${id} has invalid from node ${from}`);
-        return;
-      }
-
-      const toNode = this.nodes.find(n => n.data.id === to);
-      if (!toNode) {
-        console.warn(`Edge ${id} has invalid to node ${to}`);
-        return;
-      }
-
-      this.edges.push({
-        data: {
-          id,
-          source: from,
-          target: to,
-          toInvisible: toNode.data.isInvisible ?? false,
-          color,
-        },
-      });
-    }
-
-    _getStatusIdByColor(color) {
-      return config.statuses.find(s => s.color === color)?.id ?? config.statuses[0].id;
-    }
-
-    getElements() {
-      return { nodes: this.nodes, edges: this.edges };
-    }
-
-    #addPosition({ x, y }) {
-      this.positions.add(`${x},${y}`);
-    }
-
-    #hasPosition({ x, y }) {
-      return this.positions.has(`${x},${y}`);
-    }
-  }
-
-  // Generate legend from status configuration
-  function generateLegend() {
-    const statusLegend = document.getElementById('status-legend');
-    const borderLegend = document.getElementById('border-legend');
-
-    // Clear existing content
-    statusLegend.innerHTML = '';
-    borderLegend.innerHTML = '';
-
-    // Generate status legend items
-    config.statuses.forEach(status => {
+  generateLegend() {
+    if (!this.statusLegend || !this.borderLegend) return;
+    this.statusLegend.innerHTML = '';
+    this.borderLegend.innerHTML = '';
+    this.config.statuses.forEach(status => {
       if (status.name) {
         const item = document.createElement('div');
         item.className = 'legend-item';
@@ -176,14 +299,10 @@ import { Graph } from './graph.js';
           <div class="legend-color" style="background: ${status.color}"></div>
           <span>${status.name}</span>
         `;
-        statusLegend.appendChild(item);
-      } else {
-        console.warn(`Status ${status.id} has no name to render in references section`);
+        this.statusLegend.appendChild(item);
       }
     });
-
-    // Generate border legend items from availabilities
-    config.availabilities.forEach(avail => {
+    this.config.availabilities.forEach(avail => {
       if (avail.name) {
         const item = document.createElement('div');
         item.className = 'legend-item';
@@ -191,164 +310,53 @@ import { Graph } from './graph.js';
           <div class="legend-color legend-border" style="border-color: ${avail.color}"></div>
           <span>${avail.name}</span>
         `;
-        borderLegend.appendChild(item);
-      } else {
-        console.warn(`Availability ${avail.id} has no name to render in references section`);
+        this.borderLegend.appendChild(item);
       }
     });
   }
 
-  // Shared logic to render graph and UI for current variant and theme
-  function renderGraphAndUI() {
-    // Load variant data
-    const variantData = appData.variants[currentVariant];
-
-    // Get current theme colors from window.THEMES
-    const theme = window.THEMES[currentTheme];
-    themeColors = theme?.colors ?? {};
-    applyTheme(theme);
-
-    // Set up config with resolved CSS colors
-    config = {
-      statuses: variantData.statuses.map(s => ({
-        ...s,
-        color: resolveCssColor(s.color),
-        textColor: resolveCssColor(s.textColor),
-        leafTextColor: s.leafTextColor ? resolveCssColor(s.leafTextColor) : null,
-      })),
-      availabilities: variantData.availabilities.map(a => ({ ...a, color: resolveCssColor(a.color) })),
-    };
-
-    // Generate legend
-    generateLegend();
-
-    // Remove skeleton loading state
-    const legendItems = document.querySelector('.legend-items');
-    if (legendItems) {
-      legendItems.classList.remove('skeleton');
-    }
-
-    // Load saved statuses from localStorage and merge with subjects
-    const savedStatuses = loadStatuses();
-    const defaultStatus = config.statuses[0].id;
-    const subjects = variantData.subjects.map(s => ({
-      ...s,
-      status: savedStatuses[s.id] || s.status || defaultStatus,
-    }));
-
-    // Create Graph and render
-    graph = new Graph(config, subjects, variantData.edges);
-    const drawer = new CytoscapeDrawer();
-    graph.render(drawer);
-
-    // Destroy previous Cytoscape instance if exists
-    if (cy) {
-      cy.destroy();
-      cy = null;
-    }
-
-    // Initialize Cytoscape with drawer's elements
-    initCytoscape(drawer.getElements());
-  }
-
-  // Initialize the application
-  async function init() {
-    // Fetch data.json
-    try {
-      const response = await fetch('data.json');
-      appData = await response.json();
-    } catch (err) {
-      console.error('Error loading data.json:', err);
-      return;
-    }
-
-    // Populate variant dropdown
-    const variantSelect = document.getElementById('variant-select');
-    variantSelect.innerHTML = '';
-    Object.entries(appData.variants).forEach(([id, variant]) => {
-      const option = document.createElement('option');
-      option.value = id;
-      option.textContent = variant.name;
-      variantSelect.appendChild(option);
+  initCytoscape(elements) {
+    this.cy = cytoscape({
+      container: this.cyContainer,
+      elements: elements,
+      style: this.buildStylesheet(),
+      layout: {
+        name: 'preset',
+        fit: true,
+        padding: 50
+      },
+      minZoom: 0.3,
+      maxZoom: 3,
     });
-
-    // Load selected variant from URL query param or use default
-    const urlParams = new URLSearchParams(window.location.search);
-    const variantParam = urlParams.get(VARIANT_PARAM);
-    const variantInStorage = localStorage.getItem(VARIANT_STORAGE_KEY);
-
-    currentVariant = (variantParam && appData.variants[variantParam])
-      ? variantParam
-      : (variantInStorage && appData.variants[variantInStorage])
-        ? variantInStorage
-        : appData.defaultVariant;
-
-    if (currentVariant !== variantInStorage) {
-      try {
-        localStorage.setItem(VARIANT_STORAGE_KEY, currentVariant);
-      } catch (err) {
-        console.warn('Could not save selected variant to localStorage:', err);
-      }
-    }
-
-    // Set dropdown to current variant
-    variantSelect.value = currentVariant;
-    variantSelect.classList.remove('skeleton');
-    variantSelect.style.display = 'block';
-
-    // Hide header skeletons
-    document.querySelectorAll('.header-skeleton').forEach(el => el.style.display = 'none');
-
-    // Load theme from localStorage or use default (themes defined in index.html)
-    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    currentTheme = (savedTheme && window.THEMES[savedTheme])
-      ? savedTheme
-      : window.DEFAULT_THEME;
-
-    // Set theme dropdown value and populate options
-    const themeSelect = document.getElementById('theme-select');
-    if (themeSelect) {
-      themeSelect.innerHTML = '';
-      Object.entries(window.THEMES).forEach(([id, theme]) => {
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = theme.name;
-        themeSelect.appendChild(option);
-      });
-      themeSelect.value = currentTheme;
-      themeSelect.style.display = 'block';
-    }
-
-    // Render graph and UI for initial load
-    renderGraphAndUI();
-    setupEventListeners();
-    registerServiceWorker();
+    this.updateProgress();
+    this.cy.on('tap', 'node[nodeType="subject"]', evt => {
+      const node = evt.target;
+      this.graph.toggleStatus(node.id());
+      this.reRenderGraph();
+      this.saveStatuses();
+    });
+    // Tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'cy-tooltip';
+    this.cyContainer.appendChild(tooltip);
+    this.cy.on('mouseover', 'node[nodeType="subject"]', e => {
+      this.cyContainer.style.cursor = 'pointer';
+      tooltip.textContent = e.target.data('name');
+      tooltip.style.display = 'block';
+    });
+    this.cy.on('mousemove', 'node[nodeType="subject"]', e => {
+      const pos = e.renderedPosition;
+      tooltip.style.left = (pos.x + 15) + 'px';
+      tooltip.style.top = (pos.y + 15) + 'px';
+    });
+    this.cy.on('mouseout', 'node', () => {
+      this.cyContainer.style.cursor = 'grab';
+      tooltip.style.display = 'none';
+    });
   }
 
-  // Detect whether the app is running as an installed PWA
-  function isInstalled() {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isIosStandalone = window.navigator.standalone === true;
-    const isAndroidWebAPK = /android/.test(navigator.userAgent) && document.referrer && document.referrer.startsWith('android-app://');
-    const persisted = localStorage.getItem('pwaInstalled') === 'true';
-    return isStandalone || isIosStandalone || isAndroidWebAPK || persisted;
-  }
-
-  // Register service worker for offline functionality
-  async function registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) return;
-    try {
-      const reg = await navigator.serviceWorker.register('./sw.js');
-      console.log('Service Worker registered:', reg);
-    } catch (err) {
-      console.error('Service Worker registration failed:', err);
-    }
-  }
-
-  // Build dynamic stylesheet based on config
-  function buildStylesheet() {
-    const styles = [
-      // Base node style (for subject nodes)
+  buildStylesheet() {
+    return [
       {
         selector: 'node[nodeType="subject"]',
         style: {
@@ -370,8 +378,6 @@ import { Graph } from './graph.js';
           'transition-duration': '0.3s'
         }
       },
-
-      // Connector node style (rhombus/diamond)
       {
         selector: 'node[nodeType="connector"]',
         style: {
@@ -387,8 +393,6 @@ import { Graph } from './graph.js';
           'events': 'no',
         }
       },
-
-      // Invisible connector style (for 1-to-1 connectors)
       {
         selector: 'node[?isInvisible]',
         style: {
@@ -400,8 +404,6 @@ import { Graph } from './graph.js';
           'label': '',
         }
       },
-
-      // Invisible connector with gap (larger size)
       {
         selector: 'node[?isInvisible][?withGap]',
         style: {
@@ -409,8 +411,6 @@ import { Graph } from './graph.js';
           'height': 20
         }
       },
-
-      // Edges
       {
         selector: 'edge',
         style: {
@@ -425,8 +425,6 @@ import { Graph } from './graph.js';
           'events': 'no',
         }
       },
-
-      // Edges pointing to invisible connectors (no arrow, just a line)
       {
         selector: 'edge[?toInvisible]',
         style: {
@@ -434,392 +432,236 @@ import { Graph } from './graph.js';
         }
       }
     ];
-
-    return styles;
   }
 
-  // Initialize Cytoscape with elements from drawer
-  function initCytoscape(elements) {
-    cy = cytoscape({
-      container: document.getElementById('cy'),
-      elements: elements,
-      style: buildStylesheet(),
-      layout: {
-        name: 'preset',
-        fit: true,
-        padding: 50
-      },
-      minZoom: 0.3,
-      maxZoom: 3,
-      wheelSensitivity: 0.2
-    });
-
-    // Update progress on initial load
-    updateProgress();
-
-    // Click handler to cycle through statuses
-    cy.on('tap', 'node[nodeType="subject"]', function(evt) {
-      const node = evt.target;
-      const currentFillColor = node.data('fillColor');
-      const currentStatusObj = config.statuses.find(s => s.color === currentFillColor);
-      const currentIndex = config.statuses.indexOf(currentStatusObj);
-      const nextIndex = (currentIndex + 1) % config.statuses.length;
-      const nextStatus = config.statuses[nextIndex].id;
-      const nextFillColor = config.statuses[nextIndex].color;
-
-      // Update status and colors
-      node.data('status', nextStatus);
-      node.data('fillColor', nextFillColor);
-      reRenderGraph();
-      saveStatuses();
-    });
-
-    // Cursor styles and tooltip
-    const container = document.getElementById('cy');
-    const tooltip = document.createElement('div');
-    tooltip.className = 'cy-tooltip';
-    container.appendChild(tooltip);
-
-    cy.on('mouseover', 'node[nodeType="subject"]', function(e) {
-      container.style.cursor = 'pointer';
-      tooltip.textContent = e.target.data('name');
-      tooltip.style.display = 'block';
-    });
-    cy.on('mousemove', 'node[nodeType="subject"]', function(e) {
-      const pos = e.renderedPosition;
-      tooltip.style.left = (pos.x + 15) + 'px';
-      tooltip.style.top = (pos.y + 15) + 'px';
-    });
-    cy.on('mouseout', 'node', function() {
-      container.style.cursor = 'grab';
-      tooltip.style.display = 'none';
-    });
-
-    // Handle appinstalled event
-    window.addEventListener('appinstalled', () => {
-      const installBtn = document.getElementById('install-button');
-      if (installBtn) installBtn.style.display = 'none';
-      try {
-        localStorage.setItem('pwaInstalled', 'true');
-      } catch (err) {}
-      registerServiceWorker();
-    });
-  }
-
-  // Re-render graph after status change
-  function reRenderGraph() {
-    // Collect current statuses from cytoscape
-    const statuses = {};
-    cy.nodes('[nodeType="subject"]').forEach(node => {
-      statuses[node.id()] = node.data('status');
-    });
-
-    // Get variant data and merge with current statuses
-    const variantData = appData.variants[currentVariant];
-    const defaultStatus = config.statuses[0].id;
-    const subjects = variantData.subjects.map(s => ({
-      ...s,
-      status: statuses[s.id] || s.status || defaultStatus,
-    }));
-
-    // Re-create graph and render
-    graph = new Graph(config, subjects, variantData.edges);
+  reRenderGraph() {
     const drawer = new CytoscapeDrawer();
-    graph.render(drawer);
-
-    // Update cytoscape node/edge data
+    this.graph.render(drawer);
     const elements = drawer.getElements();
-
-    // Update nodes
-    elements.nodes.forEach(newNode => {
-      const cyNode = cy.getElementById(newNode.data.id);
-      if (cyNode.length) {
-        cyNode.data('status', newNode.data.status);
-        cyNode.data('fillColor', newNode.data.fillColor);
-        cyNode.data('borderColor', newNode.data.borderColor);
-        cyNode.data('textColor', newNode.data.textColor);
-      }
+    this.cy.batch(() => {
+      elements.nodes.forEach(newNode => {
+        const cyNode = this.cy.getElementById(newNode.data.id);
+        if (cyNode.length) {
+          cyNode.data('status', newNode.data.status);
+          cyNode.data('fillColor', newNode.data.fillColor);
+          cyNode.data('borderColor', newNode.data.borderColor);
+          cyNode.data('textColor', newNode.data.textColor);
+        }
+      });
+      elements.edges.forEach(newEdge => {
+        const cyEdge = this.cy.getElementById(newEdge.data.id);
+        if (cyEdge.length) {
+          cyEdge.data('color', newEdge.data.color);
+        }
+      });
     });
-
-    // Update edges
-    elements.edges.forEach(newEdge => {
-      const cyEdge = cy.getElementById(newEdge.data.id);
-      if (cyEdge.length) {
-        cyEdge.data('color', newEdge.data.color);
-      }
-    });
-
-    updateProgress();
+    this.updateProgress();
   }
 
-  // Update progress percentages
-  function updateProgress() {
-    const totalSubjects = cy.nodes('[nodeType="subject"]').length;
+  updateProgress() {
+    const totalSubjects = this.cy.nodes('[nodeType="subject"]').length;
     let approvedCount = 0;
     let pendingCount = 0;
-
-    const approvedIndex = config.statuses.length - 1;
-    const pendingIndex = config.statuses.length - 2;
-
-    cy.nodes('[nodeType="subject"]').forEach(node => {
+    const approvedIndex = this.config.statuses.length - 1;
+    const pendingIndex = this.config.statuses.length - 2;
+    this.cy.nodes('[nodeType="subject"]').forEach(node => {
       const status = node.data('status');
-      const statusIndex = config.statuses.findIndex(s => s.id === status);
+      const statusIndex = this.config.statuses.findIndex(s => s.id === status);
       if (statusIndex >= approvedIndex) approvedCount++;
       if (statusIndex >= pendingIndex) pendingCount++;
     });
-
     const approvedPercent = Math.round((approvedCount / totalSubjects) * 100);
     const pendingPercent = Math.round((pendingCount / totalSubjects) * 100);
-
-    document.getElementById('progress-percentage').textContent = `${approvedPercent}%`;
-    document.getElementById('progress-pending-text').textContent = `${pendingPercent}%`;
-
+    if (this.progressPercentage) {
+      this.progressPercentage.textContent = `${approvedPercent}%`;
+    }
+    if (this.progressPendingText) {
+      this.progressPendingText.textContent = `${pendingPercent}%`;
+    }
     const circumference = 283;
-    document.getElementById('progress-approved').style.strokeDashoffset = circumference - (circumference * approvedPercent / 100);
-    document.getElementById('progress-pending').style.strokeDashoffset = circumference - (circumference * pendingPercent / 100);
+    if (this.progressApproved) {
+      this.progressApproved.style.strokeDashoffset = circumference - (circumference * approvedPercent / 100);
+    }
+    if (this.progressPending) {
+      this.progressPending.style.strokeDashoffset = circumference - (circumference * pendingPercent / 100);
+    }
   }
 
-  // Setup event listeners
-  function setupEventListeners() {
-    // Variant selector (no reload)
-    document.getElementById('variant-select').addEventListener('change', async (e) => {
-      const newVariant = e.target.value;
-      if (appData.variants[newVariant]) {
-        currentVariant = newVariant;
-        localStorage.setItem(VARIANT_STORAGE_KEY, newVariant);
-        // Update URL without reload
-        const url = new URL(window.location);
-        url.searchParams.set(VARIANT_PARAM, newVariant);
-        window.history.replaceState({}, '', url);
-        // Re-initialize graph and UI for new variant
-        renderGraphAndUI();
-      }
-    });
+  reset(e) {
+    localStorage.removeItem(this.getStorageKey());
+    this.renderGraph();
+  }
 
-    // Theme selector (no reload)
-    document.getElementById('theme-select').addEventListener('change', async (e) => {
-      const newThemeId = e.target.value;
-      const newTheme = window.THEMES[newThemeId];
-      if (newTheme) {
-        currentTheme = newThemeId;
-        themeColors = newTheme.colors;
-        applyTheme(newTheme);
-        localStorage.setItem(THEME_STORAGE_KEY, newThemeId);
-        // Re-initialize graph and UI for new theme
-        renderGraphAndUI();
-      }
-    });
+  fit(e) {
+    this.cy.fit(50);
+  }
 
-    // Reset button
-    document.getElementById('reset-btn').addEventListener('click', () => {
-      localStorage.removeItem(getStorageKey());
-      renderGraphAndUI();
-    });
+  export(e) {
+    const statuses = this.loadStatuses();
+    if (Object.keys(statuses).length === 0) {
+      alert('No hay progreso para exportar.');
+      return;
+    }
+    const exportData = { variant: this.currentVariant, statuses };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `progress-${this.currentVariant}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-    // Fit button
-    document.getElementById('fit-btn').addEventListener('click', () => {
-      cy.fit(50);
-    });
-
-    // Export button - exports statuses for current variant
-    document.getElementById('export-btn').addEventListener('click', () => {
-      const statuses = loadStatuses();
-      if (Object.keys(statuses).length === 0) {
-        alert('No hay progreso para exportar.');
-        return;
-      }
-      const exportData = { variant: currentVariant, statuses };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `progress-${currentVariant}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    // Import button
-    document.getElementById('import-btn').addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target.result);
-            if (!data.statuses || typeof data.statuses !== 'object') {
-              throw new Error('Formato de datos inválido');
-            }
-            localStorage.setItem(getStorageKey(), JSON.stringify(data.statuses));
-            renderGraphAndUI();
-          } catch (err) {
-            alert('Error al importar: ' + err.message);
+  import(e) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.statuses || typeof data.statuses !== 'object') {
+            throw new Error('Formato de datos inválido');
           }
-        };
-        reader.readAsText(file);
+          localStorage.setItem(this.getStorageKey(), JSON.stringify(data.statuses));
+          this.renderGraph();
+        } catch (err) {
+          alert('Error al importar: ' + err.message);
+        }
       };
-      input.click();
-    });
+      reader.readAsText(file);
+    };
+    input.click();
+  }
 
-    // Screenshot button
-    document.getElementById('screenshot-btn').addEventListener('click', () => {
-      try {
-        const scale = 4;
-        const png = cy.png({
-          output: 'blob',
-          scale: scale,
-          bg: 'transparent',
-          full: true
-        });
+  screenshot(e) {
+    try {
+      const scale = 4;
+      const png = this.cy.png({
+        output: 'blob',
+        scale: scale,
+        bg: 'transparent',
+        full: true
+      });
+      const img = new Image();
+      img.onload = () => {
+        const paddingX = img.width * 0.1;
+        const paddingY = img.height * 0.05;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width + paddingX * 2;
+        canvas.height = img.height + paddingY * 2;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, paddingX, paddingY);
+        this.drawProgressGauge(ctx);
+        this.drawWatermark(ctx);
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = `subjects-graph-${this.currentVariant}.png`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      };
+      img.src = URL.createObjectURL(png);
+    } catch (err) {
+      console.error('Screenshot error:', err);
+      alert('Error al capturar pantalla: ' + err.message);
+    }
+  }
 
-        // Load the cytoscape image and composite with progress gauge
-        const img = new Image();
-        img.onload = () => {
-          // Padding proportional to image size (10% horizontal, 5% vertical)
-          const paddingX = img.width * 0.1;
-          const paddingY = img.height * 0.05;
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width + paddingX * 2;
-          canvas.height = img.height + paddingY * 2;
-          const ctx = canvas.getContext('2d');
-
-          // Draw cytoscape graph centered with padding
-          ctx.drawImage(img, paddingX, paddingY);
-
-          // Draw progress gauge in bottom-right corner (in padding area)
-          drawProgressGauge(ctx);
-
-          // Draw watermark
-          drawWatermark(ctx);
-
-          // Download the composited image
-          canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.download = `subjects-graph-${currentVariant}.png`;
-            link.href = url;
-            link.click();
-            URL.revokeObjectURL(url);
-          }, 'image/png');
-        };
-        img.src = URL.createObjectURL(png);
-      } catch (err) {
-        console.error('Screenshot error:', err);
-        alert('Error al capturar pantalla: ' + err.message);
-      }
-    });
-
-    // Draw progress gauge on canvas
-    function drawProgressGauge(ctx) {
-      // Scale gauge relative to canvas size (20% of smaller dimension for larger screenshot visibility)
-      const minDimension = Math.min(ctx.canvas.width, ctx.canvas.height);
-      const gaugeScale = minDimension / 600;
-
-      const size = 120 * gaugeScale;
-      // Position offset scales with gauge size for consistency
-      const offset = 30 * gaugeScale;
-      const x = ctx.canvas.width - size - offset;
-      const y = ctx.canvas.height - size - offset;
-      const centerX = x + size / 2;
-      const centerY = y + size / 2;
-      const radius = 45 * gaugeScale;
-      const strokeWidth = 8 * gaugeScale;
-
-      // Get current progress values
-      const approvedPercent = parseInt(document.getElementById('progress-percentage').textContent);
-      const pendingPercent = parseInt(document.getElementById('progress-pending-text').textContent);
-
-      // Get theme colors
-      const bgColor = themeColors['--bg-secondary'] || '#161b22';
-      const trackColor = themeColors['--bg-tertiary'] || '#21262d';
-      const pendingColor = themeColors['--fill-color-3'] || '#2255d4';
-      const approvedColor = themeColors['--fill-color-4'] || '#3b82f6';
-
-      // Draw background circle
+  drawProgressGauge(ctx) {
+    const minDimension = Math.min(ctx.canvas.width, ctx.canvas.height);
+    const gaugeScale = minDimension / 600;
+    const size = 120 * gaugeScale;
+    const offset = 30 * gaugeScale;
+    const x = ctx.canvas.width - size - offset;
+    const y = ctx.canvas.height - size - offset;
+    const centerX = x + size / 2;
+    const centerY = y + size / 2;
+    const radius = 45 * gaugeScale;
+    const strokeWidth = 8 * gaugeScale;
+    const approvedPercent = this.progressPercentage ? parseInt(this.progressPercentage.textContent) : 0;
+    const pendingPercent = this.progressPendingText ? parseInt(this.progressPendingText.textContent) : 0;
+    const bgColor = this.themeColors['--bg-secondary'] || '#161b22';
+    const trackColor = this.themeColors['--bg-tertiary'] || '#21262d';
+    const pendingColor = this.themeColors['--fill-color-3'] || '#2255d4';
+    const approvedColor = this.themeColors['--fill-color-4'] || '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+    ctx.fillStyle = bgColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = trackColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.stroke();
+    if (pendingPercent > 0) {
       ctx.beginPath();
-      ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
-      ctx.fillStyle = bgColor;
-      ctx.fill();
-
-      // Draw track circle
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = trackColor;
+      ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pendingPercent / 100));
+      ctx.strokeStyle = pendingColor;
       ctx.lineWidth = strokeWidth;
+      ctx.lineCap = 'round';
       ctx.stroke();
-
-      // Draw pending arc (behind approved)
-      if (pendingPercent > 0) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pendingPercent / 100));
-        ctx.strokeStyle = pendingColor;
-        ctx.lineWidth = strokeWidth;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-      }
-
-      // Draw approved arc (on top)
-      if (approvedPercent > 0) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * approvedPercent / 100));
-        ctx.strokeStyle = approvedColor;
-        ctx.lineWidth = strokeWidth;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-      }
-
-      // Draw approved percentage text
-      ctx.fillStyle = approvedColor;
-      ctx.font = `700 ${1.5 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${approvedPercent}%`, centerX, centerY - 6 * gaugeScale);
-
-      // Draw pending percentage text
-      ctx.fillStyle = pendingColor;
-      ctx.font = `600 ${0.75 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.fillText(`${pendingPercent}%`, centerX, centerY + 12 * gaugeScale);
     }
+    if (approvedPercent > 0) {
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * approvedPercent / 100));
+      ctx.strokeStyle = approvedColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    ctx.fillStyle = approvedColor;
+    ctx.font = `700 ${1.5 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${approvedPercent}%`, centerX, centerY - 6 * gaugeScale);
+    ctx.fillStyle = pendingColor;
+    ctx.font = `600 ${0.75 * 16 * gaugeScale}px 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.fillText(`${pendingPercent}%`, centerX, centerY + 12 * gaugeScale);
+  }
 
-    // Draw watermark on canvas
-    function drawWatermark(ctx) {
-      // Scale watermark relative to canvas size
-      const minDimension = Math.min(ctx.canvas.width, ctx.canvas.height);
-      const wmScale = minDimension / 800;
+  drawWatermark(ctx) {
+    const minDimension = Math.min(ctx.canvas.width, ctx.canvas.height);
+    const wmScale = minDimension / 800;
+    const text = 'raniagus.github.io/subjects-graph';
+    const fontSize = 12 * wmScale;
+    const x = ctx.canvas.width / 2;
+    const y = 20 * wmScale;
+    ctx.font = `600 ${fontSize}px "Open Sans", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 3 * wmScale;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, x, y);
+  }
 
-      const text = 'raniagus.github.io/subjects-graph';
-      const fontSize = 12 * wmScale;
-      const x = ctx.canvas.width / 2;
-      const y = 20 * wmScale;
-
-      ctx.font = `600 ${fontSize}px "Open Sans", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-
-      // Draw black stroke
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 3 * wmScale;
-      ctx.lineJoin = 'round';
-      ctx.strokeText(text, x, y);
-
-      // Draw white fill
-      ctx.fillStyle = 'white';
-      ctx.fillText(text, x, y);
+  async registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      await navigator.serviceWorker.register('./sw.js');
+    } catch (err) {
+      console.error('Service Worker registration failed:', err);
     }
   }
 
-  // Start the application when DOM is ready
-  async function bootstrap() {
-    await init();
-    lucide.createIcons();
+  onBeforeInstallPrompt(event) {
+    event.preventDefault();
+    // Optionally, store the event for later use (e.g., to show a custom install button)
+    this.deferredPrompt = event;
+    // Example: Show your custom install button here if you want
+    // document.getElementById('install-button').style.display = 'block';
   }
+}
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrap);
-  } else {
-    bootstrap();
-  }
-})();
+document.addEventListener('DOMContentLoaded', () => {
+  window.graphApp = new GraphApp();
+  window.graphApp.connect();
+});
